@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "582420943595",
+    "firebase_url": "https://sharebuy-db31e.firebaseio.com",
+    "project_id": "sharebuy-db31e",
+    "storage_bucket": "sharebuy-db31e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:582420943595:android:7463dc47663b538b",
+        "android_client_info": {
+          "package_name": "com.mingmin.sharebuy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "582420943595-89f0kv6ep86ad0fl0qr4rt1o3s74tnkq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mingmin.sharebuy",
+            "certificate_hash": "9b693d0626f8d962fdcb1f3bfac299aa5d78b94e"
+          }
+        },
+        {
+          "client_id": "582420943595-hveakcjjeklei9638bst2nboos5aha8g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8TQIWvzsT9diAn4hyiS9HAoBg_Ab970k"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "582420943595-hveakcjjeklei9638bst2nboos5aha8g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
