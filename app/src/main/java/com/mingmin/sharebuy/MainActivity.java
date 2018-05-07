@@ -1,5 +1,6 @@
 package com.mingmin.sharebuy;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -19,6 +20,7 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener {
 
     private static final int RC_SIGN_IN = 1;
+    private static final int RC_ADD_ITEM = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                startActivityForResult(new Intent(MainActivity.this, AddOrderActivity.class), RC_ADD_ITEM);
             }
         });
     }
