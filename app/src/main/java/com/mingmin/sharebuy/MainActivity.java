@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     private static final int RC_SIGN_IN = 1;
     private static final int RC_ADD_ITEM = 2;
+    private FirebaseUser user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +38,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivityForResult(new Intent(MainActivity.this, AddOrderActivity.class), RC_ADD_ITEM);
+                Intent intent = new Intent(MainActivity.this, AddOrderActivity.class);
+                intent.putExtra("USER_UID", user.getUid());
+                startActivityForResult(intent, RC_ADD_ITEM);
             }
         });
     }
@@ -66,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     @Override
     public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-        FirebaseUser user = firebaseAuth.getCurrentUser();
+        user = firebaseAuth.getCurrentUser();
         if (user == null) {
             startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder()
                     .setAvailableProviders(Arrays.asList(
