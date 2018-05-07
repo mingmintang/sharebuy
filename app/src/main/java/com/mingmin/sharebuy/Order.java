@@ -14,6 +14,9 @@ public class Order {
     private long endTime;
     private ArrayList<Buyer> buyers;
 
+    private Order() {
+    }
+
     public Order(String uid) {
         id = System.currentTimeMillis();
         this.uid = uid;

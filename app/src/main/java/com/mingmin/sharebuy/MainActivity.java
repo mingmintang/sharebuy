@@ -6,14 +6,25 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 
 import java.util.Arrays;
 
@@ -77,7 +88,52 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     )).build(),
                     RC_SIGN_IN);
         } else {
-
+            setupRecyclerView();
         }
+    }
+
+    private void setupRecyclerView() {
+        RecyclerView recyclerView = findViewById(R.id.main_order_list);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        Query query = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(user.getUid())
+                .child("orders")
+                .limitToLast(30);
+
+        FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
+                .setQuery(query, Order.class)
+                .build();
+        FirebaseRecyclerAdapter<Order, OrderHolder> adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
+            @NonNull
+            @Override
+            public OrderHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+                View view = LayoutInflater.from(MainActivity.this)
+                        .inflate(R.layout.row_order, parent, false);
+                return new OrderHolder(view);
+            }
+
+            @Override
+            protected void onBindViewHolder(@NonNull OrderHolder holder, int position, @NonNull Order order) {
+                holder.tvName.setText(order.getName());
+                holder.tvPrice.setText(String.valueOf(order.getPrice()));
+                holder.tvCount.setText(String.valueOf(order.getCount()));
+                holder.calculateAmount();
+                RequestOptions requestOptions = new RequestOptions()
+                        .centerCrop()
+                        .override(300, 300)
+                        .placeholder(R.drawable.ic_downloading)
+                        .error(R.drawable.ic_alert);
+                Glide.with(MainActivity.this)
+                        .load(order.getImageUrl())
+                        .apply(requestOptions)
+                        .into(holder.imageView);
+            }
+        };
+
+        recyclerView.setAdapter(adapter);
+        adapter.startListening();
     }
 }

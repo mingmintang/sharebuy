@@ -5,13 +5,13 @@ import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
@@ -51,6 +51,8 @@ public class AddOrderActivity extends TakePhotoActivity {
         etCount = findViewById(R.id.add_order_count);
         tvAmount = findViewById(R.id.add_order_amount);
 
+        imageView.setImageDrawable(getResources().getDrawable(R.drawable.ic_image));
+
         etPrice.setText("0");
         etPrice.addTextChangedListener(new TextWatcher() {
             @Override
@@ -60,6 +62,9 @@ public class AddOrderActivity extends TakePhotoActivity {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() == 0) {
                     etPrice.setText("0");
+                }
+                if (s.length() >= 9) {
+                    etPrice.setText("99999999");
                 }
                 calculateAmount();
             }
@@ -78,6 +83,9 @@ public class AddOrderActivity extends TakePhotoActivity {
                 if (s.length() == 0) {
                     etCount.setText("0");
                 }
+                if (s.length() >= 5) {
+                    etCount.setText("9999");
+                }
                 calculateAmount();
             }
 
@@ -91,8 +99,7 @@ public class AddOrderActivity extends TakePhotoActivity {
     private void calculateAmount() {
         int price = Integer.parseInt(etPrice.getText().toString());
         int count = Integer.parseInt(etCount.getText().toString());
-        int amount = price * count;
-        tvAmount.setText(String.valueOf(amount));
+        tvAmount.setText(String.valueOf(price * count));
     }
 
     public void pickImage(View view) {
