@@ -9,7 +9,7 @@ public class Order {
     private String imagePath;
     private String imageUrl;
     private int price;
-    private int countMax;
+    private int count;
     private long startTime;
     private long endTime;
     private ArrayList<Buyer> buyers;
@@ -63,12 +63,12 @@ public class Order {
         this.price = price;
     }
 
-    public int getCountMax() {
-        return countMax;
+    public int getCount() {
+        return count;
     }
 
-    public void setCountMax(int countMax) {
-        this.countMax = countMax;
+    public void setCount(int count) {
+        this.count = count;
     }
 
     public long getStartTime() {

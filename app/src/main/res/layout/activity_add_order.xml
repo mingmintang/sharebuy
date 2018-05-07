@@ -17,7 +17,7 @@
 
     <Button
         android:id="@+id/add_order_pickImage"
-        android:layout_width="wrap_content"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
         android:onClick="pickImage"
         android:text="選擇"
@@ -26,7 +26,7 @@
 
     <Button
         android:id="@+id/add_order_camera"
-        android:layout_width="wrap_content"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
         android:text="拍照"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
@@ -34,13 +34,12 @@
 
     <Button
         android:id="@+id/add_order_createOrder"
-        android:layout_width="0dp"
+        android:layout_width="120dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:onClick="createOrder"
-        android:text="建立訂單"
+        android:text="建立幫買訂單"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/guideline2"
         app:layout_constraintStart_toStartOf="@+id/guideline" />
 
     <android.support.design.widget.TextInputLayout
@@ -56,7 +55,7 @@
             android:id="@+id/add_order_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="商品名稱"
+            android:hint="商品名稱(可空白)"
             android:singleLine="true" />
     </android.support.design.widget.TextInputLayout>
 
@@ -79,19 +78,18 @@
     </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout
-        android:id="@+id/add_order_count_max_layout"
+        android:id="@+id/add_order_count_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toTopOf="@+id/add_order_price_layout">
 
         <android.support.design.widget.TextInputEditText
-            android:id="@+id/add_order_count_max"
+            android:id="@+id/add_order_count"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="4"
-            android:hint="最大數量"
+            android:hint="數量"
             android:inputType="number"
             android:singleLine="true" />
     </android.support.design.widget.TextInputLayout>
@@ -116,5 +114,36 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.45" />
+
+    <Button
+        android:id="@+id/add_order_endOrder"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:onClick="endOrder"
+        android:text="直接結單"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/guideline2" />
+
+    <TextView
+        android:id="@+id/add_order_amount_str"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:text="小計"
+        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        app:layout_constraintEnd_toStartOf="@+id/add_order_amount"
+        app:layout_constraintTop_toTopOf="@+id/add_order_amount" />
+
+    <TextView
+        android:id="@+id/add_order_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:ems="6"
+        android:gravity="center"
+        android:textAppearance="@android:style/TextAppearance.Material.Medium"
+        app:layout_constraintEnd_toStartOf="@+id/guideline2"
+        app:layout_constraintTop_toBottomOf="@+id/add_order_count_layout" />
 
 </android.support.constraint.ConstraintLayout>

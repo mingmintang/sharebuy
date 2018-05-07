@@ -2,12 +2,14 @@ package com.mingmin.sharebuy;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -26,9 +28,10 @@ public class AddOrderActivity extends TakePhotoActivity {
     private ImageView imageView;
     private EditText etName;
     private EditText etPrice;
-    private EditText etCountMax;
+    private EditText etCount;
 
     private Order order;
+    private TextView tvAmount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,7 +48,8 @@ public class AddOrderActivity extends TakePhotoActivity {
         imageView = findViewById(R.id.add_order_image);
         etName = findViewById(R.id.add_order_name);
         etPrice = findViewById(R.id.add_order_price);
-        etCountMax = findViewById(R.id.add_order_count_max);
+        etCount = findViewById(R.id.add_order_count);
+        tvAmount = findViewById(R.id.add_order_amount);
 
         etPrice.setText("0");
         etPrice.addTextChangedListener(new TextWatcher() {
@@ -57,33 +61,38 @@ public class AddOrderActivity extends TakePhotoActivity {
                 if (s.length() == 0) {
                     etPrice.setText("0");
                 }
+                calculateAmount();
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
 
-        etCountMax.setText("1");
-        etCountMax.addTextChangedListener(new TextWatcher() {
+        etCount.setText("1");
+        etCount.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                Log.d("wwwww", "onTextChanged: " + s + "/" + start + "/" + before + "/" + count);
                 if (s.length() == 0) {
-                    etCountMax.setText("1");
-                } else {
-                    int num = Integer.parseInt(s.toString());
-                    if (num == 0) {
-                        etCountMax.setText("1");
-                    }
+                    etCount.setText("0");
                 }
+                calculateAmount();
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        tvAmount.setText("0");
+    }
+
+    private void calculateAmount() {
+        int price = Integer.parseInt(etPrice.getText().toString());
+        int count = Integer.parseInt(etCount.getText().toString());
+        int amount = price * count;
+        tvAmount.setText(String.valueOf(amount));
     }
 
     public void pickImage(View view) {
@@ -110,12 +119,19 @@ public class AddOrderActivity extends TakePhotoActivity {
                 .into(imageView);
     }
 
-    public void createOrder(View view) {
+    private void updateFirebaseData(boolean isEndOrder) {
         order.setName(etName.getText().toString());
         order.setPrice(Integer.parseInt(etPrice.getText().toString()));
-        order.setCountMax(Integer.parseInt(etCountMax.getText().toString()));
+        order.setCount(Integer.parseInt(etCount.getText().toString()));
         order.setStartTime(System.currentTimeMillis());
+        if (isEndOrder) {
+            order.setEndTime(System.currentTimeMillis());
+        }
         String imagePath = order.getImagePath();
+        if (imagePath == null) {
+            Snackbar.make(imageView, "圖片不能空白", Snackbar.LENGTH_LONG).show();
+            return;
+        }
         String fileName = imagePath.substring(imagePath.lastIndexOf("/"));
         StorageReference storageReference = FirebaseStorage.getInstance()
                 .getReference(fileName);
@@ -132,7 +148,18 @@ public class AddOrderActivity extends TakePhotoActivity {
                                 .child("orders")
                                 .child(order.getId() + "")
                                 .setValue(order);
+
+                        setResult(RESULT_OK);
+                        finish();
                     }
                 });
+    }
+
+    public void createOrder(View view) {
+        updateFirebaseData(false);
+    }
+
+    public void endOrder(View view) {
+        updateFirebaseData(true);
     }
 }
