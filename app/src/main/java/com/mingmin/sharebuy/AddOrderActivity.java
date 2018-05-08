@@ -103,18 +103,28 @@ public class AddOrderActivity extends TakePhotoActivity {
     }
 
     public void pickImage(View view) {
+        getTakePhoto().onPickFromGalleryWithCrop(createImageUri(), getCropOptions());
+    }
+
+    public void runCamera(View view) {
+        getTakePhoto().onPickFromCaptureWithCrop(createImageUri(), getCropOptions());
+    }
+
+    private Uri createImageUri() {
         String dirPath = getApplicationInfo().dataDir + "/images";
         File file = new File(dirPath + "/" + System.currentTimeMillis() + ".jpg");
         if (!file.getParentFile().exists()) {
             file.getParentFile().mkdirs();
         }
-        Uri uri = Uri.fromFile(file);
-        CropOptions options = new CropOptions.Builder()
+        return Uri.fromFile(file);
+    }
+
+    private CropOptions getCropOptions() {
+        return new CropOptions.Builder()
                 .setAspectX(800)
                 .setAspectY(800)
                 .setWithOwnCrop(true)
                 .create();
-        getTakePhoto().onPickFromGalleryWithCrop(uri, options);
     }
 
     @Override

@@ -28,6 +28,7 @@
         android:id="@+id/add_order_camera"
         android:layout_width="120dp"
         android:layout_height="wrap_content"
+        android:onClick="runCamera"
         android:text="拍照"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toTopOf="@+id/guideline3" />
@@ -74,6 +75,7 @@
             android:ems="6"
             android:hint="價格"
             android:inputType="number"
+            android:selectAllOnFocus="true"
             android:singleLine="true" />
     </android.support.design.widget.TextInputLayout>
 
@@ -91,6 +93,7 @@
             android:ems="4"
             android:hint="數量"
             android:inputType="number"
+            android:selectAllOnFocus="true"
             android:singleLine="true" />
     </android.support.design.widget.TextInputLayout>
 

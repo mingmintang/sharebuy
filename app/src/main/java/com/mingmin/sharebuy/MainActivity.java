@@ -101,9 +101,10 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 .getReference("users")
                 .child(user.getUid())
                 .child("orders")
+                .orderByChild("nStartTime")
                 .limitToLast(30);
 
-        FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
+        final FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
                 .setQuery(query, Order.class)
                 .build();
         FirebaseRecyclerAdapter<Order, OrderHolder> adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
@@ -116,11 +117,12 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             }
 
             @Override
-            protected void onBindViewHolder(@NonNull OrderHolder holder, int position, @NonNull Order order) {
+            protected void onBindViewHolder(@NonNull OrderHolder holder, int position, @NonNull final Order order) {
                 holder.tvName.setText(order.getName());
                 holder.tvPrice.setText(String.valueOf(order.getPrice()));
                 holder.tvCount.setText(String.valueOf(order.getCount()));
                 holder.calculateAmount();
+
                 RequestOptions requestOptions = new RequestOptions()
                         .centerCrop()
                         .override(300, 300)
@@ -130,6 +132,19 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                         .load(order.getImageUrl())
                         .apply(requestOptions)
                         .into(holder.imageView);
+
+                if (order.getEndTime() != 0) {
+                    holder.btnEndOrder.setClickable(false);
+                    holder.btnEndOrder.setText("");
+                    holder.btnEndOrder.setHint("已結單");
+                }
+
+                holder.btnEndOrder.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        order.setEndTime(System.currentTimeMillis());
+                    }
+                });
             }
         };
 

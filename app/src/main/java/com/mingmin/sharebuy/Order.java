@@ -12,7 +12,9 @@ public class Order {
     private int count;
     private long startTime;
     private long endTime;
-    private ArrayList<Buyer> buyers;
+    private int buyerCount;
+    private long nStartTime; // Negative version for firebase desc sorting
+    private long nEndTime; // Negative version for firebase desc sorting
 
     private Order() {
     }
@@ -80,6 +82,7 @@ public class Order {
 
     public void setStartTime(long startTime) {
         this.startTime = startTime;
+        nStartTime = -startTime;
     }
 
     public long getEndTime() {
@@ -88,13 +91,18 @@ public class Order {
 
     public void setEndTime(long endTime) {
         this.endTime = endTime;
+        nEndTime = -endTime;
     }
 
-    public ArrayList<Buyer> getBuyers() {
-        return buyers;
+    public int getBuyerCount() {
+        return buyerCount;
     }
 
-    public void setBuyers(ArrayList<Buyer> buyers) {
-        this.buyers = buyers;
+    public long getnStartTime() {
+        return nStartTime;
+    }
+
+    public long getnEndTime() {
+        return nEndTime;
     }
 }
