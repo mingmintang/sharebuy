@@ -1,42 +1,40 @@
 package com.mingmin.sharebuy;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.view.View;
+import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.database.FirebaseRecyclerAdapter;
-import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserProfileChangeRequest;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 
 import java.util.Arrays;
 
-public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener {
+public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener,
+        NavigationView.OnNavigationItemSelectedListener,
+        OrderListFragment.OnFragmentInteractionListener,
+        GroupFragment.OnFragmentInteractionListener {
 
     private static final int RC_SIGN_IN = 1;
     private static final int RC_ADD_ITEM = 2;
     private final String TAG = getClass().getSimpleName();
     private FirebaseUser user;
-    private FirebaseRecyclerAdapter<Order, OrderHolder> adapter;
+    private DrawerLayout drawer;
+    private TextView tvName;
+    private TextView tvAccount;
+    private NavigationView navigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,10 +44,14 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
         firebaseAuth.addAuthStateListener(this);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        initView();
+    }
+
+    private void initView() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -58,12 +60,33 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 startActivityForResult(intent, RC_ADD_ITEM);
             }
         });
+
+        drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toogle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toogle);
+        toogle.syncState();
+
+        navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
+        tvName = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userName);
+        tvAccount = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userAccount);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
@@ -82,6 +105,30 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         return super.onOptionsItemSelected(item);
     }
 
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        switch (id) {
+            case R.id.nav_order:
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
+                        .commit();
+                break;
+            case R.id.nav_order_closed:
+                break;
+            case R.id.nav_group:
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.frame_layout, GroupFragment.getInstance(user))
+                        .commit();
+                break;
+        }
+
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
     @Override
     public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
         user = firebaseAuth.getCurrentUser();
@@ -92,84 +139,18 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     )).build(),
                     RC_SIGN_IN);
         } else {
-            Log.d(TAG, "onAuthStateChanged: user display name=" + user.getDisplayName());
-            setupRecyclerView();
-        }
-    }
+            tvName.setText(user.getDisplayName());
+            tvAccount.setText(user.getEmail());
 
-    private void setupRecyclerView() {
-        RecyclerView recyclerView = findViewById(R.id.main_order_list);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        Query query = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(user.getUid())
-                .child("orders")
-                .orderByChild("nStartTime")
-                .limitToLast(30);
-
-        final FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
-                .setQuery(query, Order.class)
-                .build();
-        adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
-            @NonNull
-            @Override
-            public OrderHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                View view = LayoutInflater.from(MainActivity.this)
-                        .inflate(R.layout.row_order, parent, false);
-                return new OrderHolder(view);
-            }
-
-            @Override
-            protected void onBindViewHolder(@NonNull OrderHolder holder, int position, @NonNull final Order order) {
-                holder.tvName.setText(order.getName());
-                holder.tvPrice.setText(String.valueOf(order.getPrice()));
-                holder.tvCount.setText(String.valueOf(order.getCount()));
-                holder.calculateAmount();
-
-                RequestOptions requestOptions = new RequestOptions()
-                        .centerCrop()
-                        .override(300, 300)
-                        .placeholder(R.drawable.ic_downloading)
-                        .error(R.drawable.ic_alert);
-                Glide.with(MainActivity.this)
-                        .load(order.getImageUrl())
-                        .apply(requestOptions)
-                        .into(holder.imageView);
-
-                if (order.getEndTime() != 0) {
-                    holder.btnEndOrder.setClickable(false);
-                    holder.btnEndOrder.setText("");
-                    holder.btnEndOrder.setHint("已結單");
-                }
-
-                holder.btnEndOrder.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        order.setEndTime(System.currentTimeMillis());
-                    }
-                });
-            }
-        };
-
-        recyclerView.setAdapter(adapter);
-        adapter.startListening();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (adapter != null) {
-            adapter.startListening();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
+                    .commit();
+            navigationView.setCheckedItem(R.id.nav_order);
         }
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        if (adapter != null) {
-            adapter.stopListening();
-        }
+    public void onFragmentInteraction(Uri uri) {
+
     }
 }
