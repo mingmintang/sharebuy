@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
@@ -23,6 +24,7 @@ import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 
@@ -32,7 +34,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     private static final int RC_SIGN_IN = 1;
     private static final int RC_ADD_ITEM = 2;
+    private final String TAG = getClass().getSimpleName();
     private FirebaseUser user;
+    private FirebaseRecyclerAdapter<Order, OrderHolder> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,10 +88,11 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         if (user == null) {
             startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder()
                     .setAvailableProviders(Arrays.asList(
-                            new AuthUI.IdpConfig.EmailBuilder().build()
+                            new AuthUI.IdpConfig.GoogleBuilder().build()
                     )).build(),
                     RC_SIGN_IN);
         } else {
+            Log.d(TAG, "onAuthStateChanged: user display name=" + user.getDisplayName());
             setupRecyclerView();
         }
     }
@@ -107,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         final FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
                 .setQuery(query, Order.class)
                 .build();
-        FirebaseRecyclerAdapter<Order, OrderHolder> adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
+        adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
             @NonNull
             @Override
             public OrderHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -150,5 +155,21 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
         recyclerView.setAdapter(adapter);
         adapter.startListening();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (adapter != null) {
+            adapter.startListening();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (adapter != null) {
+            adapter.stopListening();
+        }
     }
 }
