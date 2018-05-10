@@ -11,6 +11,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     private static final int RC_SIGN_IN = 1;
     private static final int RC_ADD_ITEM = 2;
     private final String TAG = getClass().getSimpleName();
-    private FirebaseUser user;
+    private FirebaseUser fuser;
     private DrawerLayout drawer;
     private TextView tvName;
     private TextView tvAccount;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, AddOrderActivity.class);
-                intent.putExtra("USER_UID", user.getUid());
+                intent.putExtra("USER_UID", fuser.getUid());
                 startActivityForResult(intent, RC_ADD_ITEM);
             }
         });
@@ -113,14 +114,14 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         switch (id) {
             case R.id.nav_order:
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
+                        .replace(R.id.frame_layout, OrderListFragment.getInstance(fuser))
                         .commit();
                 break;
             case R.id.nav_order_closed:
                 break;
             case R.id.nav_group:
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.frame_layout, GroupFragment.getInstance(user))
+                        .replace(R.id.frame_layout, GroupFragment.getInstance(fuser))
                         .commit();
                 break;
         }
@@ -131,21 +132,35 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     @Override
     public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-        user = firebaseAuth.getCurrentUser();
-        if (user == null) {
+        fuser = firebaseAuth.getCurrentUser();
+        if (fuser == null) {
             startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder()
                     .setAvailableProviders(Arrays.asList(
                             new AuthUI.IdpConfig.GoogleBuilder().build()
                     )).build(),
                     RC_SIGN_IN);
         } else {
-            tvName.setText(user.getDisplayName());
-            tvAccount.setText(user.getEmail());
+            initAfterSignIn();
+        }
+    }
 
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
-                    .commit();
-            navigationView.setCheckedItem(R.id.nav_order);
+    private void initAfterSignIn() {
+        tvName.setText(fuser.getDisplayName());
+        tvAccount.setText(fuser.getEmail());
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.frame_layout, OrderListFragment.getInstance(fuser))
+                .commit();
+        navigationView.setCheckedItem(R.id.nav_order);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case RC_SIGN_IN:
+                initAfterSignIn();
+                break;
         }
     }
 
