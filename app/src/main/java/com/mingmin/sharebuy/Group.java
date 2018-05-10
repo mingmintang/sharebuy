@@ -73,4 +73,9 @@ public class Group {
     public void setPublic(boolean aPublic) {
         isPublic = aPublic;
     }
+
+    @Override
+    public String toString() {
+        return getName() + " (" + getSearchCode() + ")";
+    }
 }

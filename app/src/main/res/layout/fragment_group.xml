@@ -12,41 +12,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <Button
-            android:id="@+id/group_join"
-            android:layout_width="55dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="4dp"
-            android:text="加入"
-            app:layout_constraintEnd_toStartOf="@+id/group_add"
-            app:layout_constraintTop_toTopOf="@+id/group_add" />
-
-        <Button
-            android:id="@+id/group_add"
-            android:layout_width="55dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="4dp"
-            android:text="新增"
-            app:layout_constraintEnd_toStartOf="@+id/group_exit"
-            app:layout_constraintTop_toTopOf="@+id/group_exit" />
-
-        <Button
-            android:id="@+id/group_exit"
-            android:layout_width="55dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="4dp"
-            android:text="退出"
-            android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <Spinner
             android:id="@+id/group_spinner"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginBottom="4dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginStart="4dp"
-            app:layout_constraintBottom_toBottomOf="@+id/group_join"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            app:layout_constraintBottom_toTopOf="@+id/guideline6"
             app:layout_constraintEnd_toStartOf="@+id/group_isPublic"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -55,11 +29,10 @@
             android:id="@+id/group_recyclerView"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_marginTop="4dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/group_spinner">
+            app:layout_constraintTop_toTopOf="@+id/guideline6">
 
         </android.support.v7.widget.RecyclerView>
 
@@ -67,11 +40,33 @@
             android:id="@+id/group_isPublic"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="4dp"
             android:text="可加人"
-            app:layout_constraintEnd_toStartOf="@+id/group_join"
-            app:layout_constraintTop_toTopOf="@+id/group_join" />
+            app:layout_constraintBottom_toTopOf="@+id/guideline6"
+            app:layout_constraintEnd_toStartOf="@+id/group_edit"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/group_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="4dp"
+            android:background="@android:color/transparent"
+            app:layout_constraintBottom_toTopOf="@+id/guideline6"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_dots_vertical" />
+
+        <android.support.constraint.Guideline
+            android:id="@+id/guideline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintGuide_percent="0.08" />
 
     </android.support.constraint.ConstraintLayout>
 </FrameLayout>

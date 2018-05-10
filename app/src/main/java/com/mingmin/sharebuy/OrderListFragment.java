@@ -95,7 +95,7 @@ public class OrderListFragment extends Fragment {
                 .child(user.getUid())
                 .child("orders")
                 .orderByChild("nStartTime")
-                .limitToLast(30);
+                .limitToFirst(30);
 
         final FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
                 .setQuery(query, Order.class)

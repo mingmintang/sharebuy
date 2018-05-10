@@ -4,20 +4,37 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
+import com.firebase.ui.database.FirebaseListAdapter;
+import com.firebase.ui.database.FirebaseListOptions;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
-public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+
+public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener {
+    private final String TAG = getClass().getSimpleName();
     private static GroupFragment fragment;
     private FirebaseUser fuser;
     private OnFragmentInteractionListener mListener;
@@ -47,30 +64,55 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     private void initViews(View view) {
-        Button btnJoinGroup = view.findViewById(R.id.group_join);
-        Button btnAddGroup = view.findViewById(R.id.group_add);
-        Button btnExitGroup = view.findViewById(R.id.group_exit);
-
-        btnJoinGroup.setOnClickListener(new View.OnClickListener() {
+        ImageButton ibEdit = view.findViewById(R.id.group_edit);
+        final PopupMenu popup = new PopupMenu(getContext(), ibEdit);
+        popup.getMenuInflater().inflate(R.menu.fragment_group_edit, popup.getMenu());
+        popup.setOnMenuItemClickListener(this);
+        ibEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PopupMenu menu = new PopupMenu(getContext(), v);
-                menu.show();
+                popup.show();
             }
         });
 
-        btnAddGroup.setOnClickListener(new View.OnClickListener() {
+        spinner = view.findViewById(R.id.group_spinner);
+        final ArrayList<Group> list = new ArrayList<>();
+        Query query = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(fuser.getUid())
+                .child("groups")
+                .orderByChild("createdTime");
+        query.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onClick(View v) {
-                AddGroupDialog.getInstance(GroupFragment.this)
-                        .show(getFragmentManager(), "ADD_GROUP");
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    Group group = item.getValue(Group.class);
+                    list.add(group);
+                    adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, list);
+                    spinner.setAdapter(adapter);
+                    if (adapter.getCount() > 0) {
+                        spinner.setSelection(0);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Log.e(TAG, databaseError.getMessage());
             }
         });
 
-//        spinner = view.findViewById(R.id.group_spinner);
-//        adapter = new ArrayAdapter<Group>(getContext(),
-//                android.R.layout.simple_list_item_1)
-//        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -95,6 +137,22 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.group_edit_join:
+                return true;
+            case R.id.group_edit_add:
+                AddGroupDialog.getInstance(GroupFragment.this)
+                        .show(getFragmentManager(), "ADD_GROUP");
+                return true;
+            case R.id.group_edit_exit:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /**
