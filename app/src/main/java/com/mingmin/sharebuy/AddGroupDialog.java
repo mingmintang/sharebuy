@@ -52,7 +52,7 @@ public class AddGroupDialog extends DialogFragment {
                     tilName.setError("名稱不能空白");
                 } else {
                     tilName.setError("");
-                    listener.onConfirm(groupName);
+                    listener.onAddGroupConfirm(groupName);
                     alertDialog.dismiss();
                 }
             }
@@ -62,6 +62,6 @@ public class AddGroupDialog extends DialogFragment {
     }
 
     public interface OnAddGroupListener {
-        void onConfirm(String groupName);
+        void onAddGroupConfirm(String groupName);
     }
 }

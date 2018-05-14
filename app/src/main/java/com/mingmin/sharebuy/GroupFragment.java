@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener {
+public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener, JoinGroupDialog.OnJoinGroupListener {
     private final String TAG = getClass().getSimpleName();
     private static GroupFragment fragment;
     private FirebaseUser fuser;
@@ -90,9 +90,6 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                     list.add(group);
                     adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, list);
                     spinner.setAdapter(adapter);
-                    if (adapter.getCount() > 0) {
-                        spinner.setSelection(0);
-                    }
                 }
             }
 
@@ -143,6 +140,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.group_edit_join:
+                JoinGroupDialog.getInstance(GroupFragment.this)
+                        .show(getFragmentManager(), "JOIN_GROUP");
                 return true;
             case R.id.group_edit_add:
                 AddGroupDialog.getInstance(GroupFragment.this)
@@ -171,7 +170,12 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     @Override
-    public void onConfirm(String groupName) {
+    public void onJoinGroupConfirm(Group group) {
+
+    }
+
+    @Override
+    public void onAddGroupConfirm(String groupName) {
         FirebaseDatabase fdb = FirebaseDatabase.getInstance();
         String groupId = fdb.getReference("groups")
                 .push()
