@@ -11,6 +11,7 @@ public class Group {
     private String founderUid;
     private String founderName;
     private long createdTime;
+    private long nCreatedTime; // Negative version for firebase desc sorting
     private int searchCode;
     private boolean isPublic = false;
 
@@ -23,6 +24,7 @@ public class Group {
         this.founderUid = founderUid;
         this.founderName = founderName;
         createdTime = System.currentTimeMillis();
+        nCreatedTime = -createdTime;
         searchCode = new Random(createdTime).nextInt(999998) + 1;
     }
 
@@ -60,6 +62,10 @@ public class Group {
 
     public long getCreatedTime() {
         return createdTime;
+    }
+
+    public long getnCreatedTime() {
+        return nCreatedTime;
     }
 
     public int getSearchCode() {

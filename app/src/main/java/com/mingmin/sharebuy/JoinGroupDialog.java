@@ -9,11 +9,24 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.InputFilter;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
+
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
@@ -46,6 +59,81 @@ public class JoinGroupDialog extends DialogFragment {
         groups.add(new Group("1a2s3d4f", "keke2", "koaqkisjwis", "Jennit2"));
         groups.add(new Group("1a2s3d4f", "keke3", "koaqkisjwis", "Jennit3"));
         groups.add(new Group("1a2s3d4f", "keke4", "koaqkisjwis", "Jennit4"));
+
+        final EditText etSearchCode = view.findViewById(R.id.join_group_searchCode);
+        etSearchCode.setFilters(new InputFilter[]{new InputFilter() {
+            @Override
+            public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                int input = Integer.parseInt(dest.toString() + source.toString());
+                if (input > 0 && input < 1000000) {
+                    return null;
+                }
+                return "";
+            }
+        }});
+        ImageButton ibSearch = view.findViewById(R.id.join_group_search);
+        ibSearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (TextUtils.isEmpty(etSearchCode.getText())) {
+                    etSearchCode.setError("不能空白");
+                } else {
+                    int searchCode = Integer.parseInt(etSearchCode.getText().toString());
+                    FirebaseDatabase.getInstance()
+                            .getReference("groups")
+                            .orderByChild("searchCode")
+                            .equalTo(searchCode)
+                            .addValueEventListener(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                        Group g = item.getValue(Group.class);
+                                        Log.d("wwwww", "onDataChange: " + g.getName() + "/" + g.getSearchCode());
+                                    }
+
+//                                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
+//                                        Group group = ds.getValue(Group.class);
+//                                        Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
+//                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+                                    Log.d("wwwww", "onCancelled: " + databaseError.getDetails());
+                                }
+                            });
+//                            .addChildEventListener(new ChildEventListener() {
+//                                @Override
+//                                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+//                                    Group group = dataSnapshot.getValue(Group.class);
+//                                    Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
+//                                }
+//
+//                                @Override
+//                                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+//
+//                                }
+//
+//                                @Override
+//                                public void onChildRemoved(DataSnapshot dataSnapshot) {
+//
+//                                }
+//
+//                                @Override
+//                                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+//
+//                                }
+//
+//                                @Override
+//                                public void onCancelled(DatabaseError databaseError) {
+//
+//                                }
+//                            });
+                }
+
+            }
+        });
+        Button btnConfirm = view.findViewById(R.id.join_group_confirm);
         initRecyclerView(view);
 
         AlertDialog dialog = new AlertDialog.Builder(getActivity())
@@ -81,6 +169,7 @@ public class JoinGroupDialog extends DialogFragment {
                 tvName = itemView.findViewById(R.id.group_name);
                 tvFounderName = itemView.findViewById(R.id.group_founderName);
                 radioButton = itemView.findViewById(R.id.group_radioButton);
+                radioButton.setClickable(false);
             }
         }
 

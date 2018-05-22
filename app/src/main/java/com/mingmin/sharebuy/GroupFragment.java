@@ -1,8 +1,11 @@
 package com.mingmin.sharebuy;
 
 import android.content.Context;
+import android.database.DataSetObserver;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,15 +24,20 @@ import android.widget.SpinnerAdapter;
 
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.firebase.ui.database.FirebaseListOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -40,6 +48,9 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     private OnFragmentInteractionListener mListener;
     private SpinnerAdapter adapter;
     private Spinner spinner;
+    private FirebaseDatabase fdb;
+    private DatabaseReference groupsRef;
+    private GroupsValueEventListener groupsValueEventListener;
 
     public static GroupFragment getInstance(FirebaseUser fuser) {
         if (fragment == null) {
@@ -53,6 +64,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        fdb = FirebaseDatabase.getInstance();
     }
 
     @Override
@@ -76,29 +88,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         });
 
         spinner = view.findViewById(R.id.group_spinner);
-        final ArrayList<Group> list = new ArrayList<>();
-        Query query = FirebaseDatabase.getInstance()
-                .getReference("users")
+        groupsValueEventListener = new GroupsValueEventListener();
+        groupsRef = fdb.getReference("users")
                 .child(fuser.getUid())
-                .child("groups")
-                .orderByChild("createdTime");
-        query.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    Group group = item.getValue(Group.class);
-                    list.add(group);
-                    adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, list);
-                    spinner.setAdapter(adapter);
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Log.e(TAG, databaseError.getMessage());
-            }
-        });
-
+                .child("groups");
+        groupsRef.addValueEventListener(groupsValueEventListener);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -128,6 +122,12 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
             throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        groupsRef.removeEventListener(groupsValueEventListener);
     }
 
     @Override
@@ -169,6 +169,50 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         void onFragmentInteraction(Uri uri);
     }
 
+    class GroupsValueEventListener implements ValueEventListener {
+        private ArrayList<Group> groups = new ArrayList<>();
+        @Override
+        public void onDataChange(DataSnapshot dataSnapshot) {
+            final HashMap<String, Boolean> groupIds = (HashMap<String, Boolean>) dataSnapshot.getValue();
+            if (groupIds != null && !groupIds.isEmpty()) {
+                groups.clear();
+                for (String groupId : groupIds.keySet()) {
+                    Log.d(TAG, "onDataChange: " + groupId);
+                    final DatabaseReference ref = fdb.getReference("groups").child(groupId);
+                    ref.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            Group group = dataSnapshot.getValue(Group.class);
+                            Log.d(TAG, "group: " + group.toString());
+                            groups.add(group);
+                            ref.removeEventListener(this);
+                            if (groups.size() == groupIds.size()) {
+                                Collections.sort(groups, new Comparator<Group>() {
+                                    @Override
+                                    public int compare(Group o1, Group o2) {
+                                        return (int) (o2.getCreatedTime() - o1.getCreatedTime());
+                                    }
+                                });
+                                adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
+                                spinner.setAdapter(adapter);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+            }
+        }
+
+        @Override
+        public void onCancelled(DatabaseError databaseError) {
+
+        }
+    }
+
     @Override
     public void onJoinGroupConfirm(Group group) {
 
@@ -176,29 +220,38 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
 
     @Override
     public void onAddGroupConfirm(String groupName) {
-        FirebaseDatabase fdb = FirebaseDatabase.getInstance();
         String groupId = fdb.getReference("groups")
                 .push()
                 .getKey();
-        Group group = new Group(groupId, groupName, fuser.getUid(), fuser.getDisplayName());
+        final Group group = new Group(groupId, groupName, fuser.getUid(), fuser.getDisplayName());
         fdb.getReference("groups")
                 .child(group.getId())
-                .child("group")
-                .setValue(group);
-
-        User user = new User(fuser.getUid(), fuser.getDisplayName());
-        fdb.getReference("groups")
-                .child(group.getId())
-                .child("users")
-                .child(user.getUid())
-                .setValue(user);
-
-        fdb.getReference("users")
-                .child(user.getUid())
-                .child("groups")
-                .child(group.getId())
-                .setValue(group);
-
-
+                .setValue(group)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        fdb.getReference("groups")
+                                .child(group.getId())
+                                .child("users")
+                                .child(group.getFounderUid())
+                                .setValue(true)
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        fdb.getReference("users")
+                                                .child(group.getFounderUid())
+                                                .child("groups")
+                                                .child(group.getId())
+                                                .setValue(true)
+                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void aVoid) {
+                                                        Snackbar.make(getView(), "新增群組成功", Snackbar.LENGTH_LONG).show();
+                                                    }
+                                                });
+                                    }
+                                });
+                    }
+                });
     }
 }
