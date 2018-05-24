@@ -25,6 +25,7 @@ import android.widget.TextView;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
@@ -34,7 +35,8 @@ public class JoinGroupDialog extends DialogFragment {
 
     private static JoinGroupDialog instance;
     private OnJoinGroupListener listener;
-    private ArrayList<Group> groups;
+    private ArrayList<Group> groups = new ArrayList<>();
+    private RecyclerView recyclerView;
 
     private void setListener(OnJoinGroupListener listener) {
         this.listener = listener;
@@ -54,11 +56,7 @@ public class JoinGroupDialog extends DialogFragment {
         View view = LayoutInflater.from(getContext())
                 .inflate(R.layout.dialog_join_group, null, false);
 
-        groups = new ArrayList<>();
-        groups.add(new Group("1a2s3d4f", "keke1", "koaqkisjwis", "Jennit1"));
-        groups.add(new Group("1a2s3d4f", "keke2", "koaqkisjwis", "Jennit2"));
-        groups.add(new Group("1a2s3d4f", "keke3", "koaqkisjwis", "Jennit3"));
-        groups.add(new Group("1a2s3d4f", "keke4", "koaqkisjwis", "Jennit4"));
+        initRecyclerView(view);
 
         final EditText etSearchCode = view.findViewById(R.id.join_group_searchCode);
         etSearchCode.setFilters(new InputFilter[]{new InputFilter() {
@@ -71,6 +69,7 @@ public class JoinGroupDialog extends DialogFragment {
                 return "";
             }
         }});
+
         ImageButton ibSearch = view.findViewById(R.id.join_group_search);
         ibSearch.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -86,55 +85,24 @@ public class JoinGroupDialog extends DialogFragment {
                             .addValueEventListener(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
+                                    groups.clear();
                                     for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        Group g = item.getValue(Group.class);
-                                        Log.d("wwwww", "onDataChange: " + g.getName() + "/" + g.getSearchCode());
+                                        Group group = item.getValue(Group.class);
+                                        Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
+                                        groups.add(group);
                                     }
-
-//                                    for (DataSnapshot ds : dataSnapshot.getChildren()) {
-//                                        Group group = ds.getValue(Group.class);
-//                                        Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
-//                                    }
+                                    recyclerView.setAdapter(new GroupAdapter(groups));
                                 }
 
                                 @Override
                                 public void onCancelled(DatabaseError databaseError) {
-                                    Log.d("wwwww", "onCancelled: " + databaseError.getDetails());
+
                                 }
                             });
-//                            .addChildEventListener(new ChildEventListener() {
-//                                @Override
-//                                public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-//                                    Group group = dataSnapshot.getValue(Group.class);
-//                                    Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
-//                                }
-//
-//                                @Override
-//                                public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-//
-//                                }
-//
-//                                @Override
-//                                public void onChildRemoved(DataSnapshot dataSnapshot) {
-//
-//                                }
-//
-//                                @Override
-//                                public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-//
-//                                }
-//
-//                                @Override
-//                                public void onCancelled(DatabaseError databaseError) {
-//
-//                                }
-//                            });
                 }
-
             }
         });
         Button btnConfirm = view.findViewById(R.id.join_group_confirm);
-        initRecyclerView(view);
 
         AlertDialog dialog = new AlertDialog.Builder(getActivity())
                 .setView(view)
@@ -147,7 +115,7 @@ public class JoinGroupDialog extends DialogFragment {
     }
 
     private void initRecyclerView(View view) {
-        RecyclerView recyclerView = view.findViewById(R.id.join_group_recyclerView);
+        recyclerView = view.findViewById(R.id.join_group_recyclerView);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager llm = new LinearLayoutManager(getContext()){
             @Override
@@ -156,7 +124,6 @@ public class JoinGroupDialog extends DialogFragment {
             }
         };
         recyclerView.setLayoutManager(llm);
-        recyclerView.setAdapter(new GroupAdapter(groups));
     }
 
     class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.ViewHolder> implements View.OnClickListener {
@@ -189,12 +156,31 @@ public class JoinGroupDialog extends DialogFragment {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            holder.tvFounderName.setText(group.getFounderName());
+            final DatabaseReference ref = FirebaseDatabase.getInstance()
+                    .getReference("users")
+                    .child(group.getFounderUid())
+                    .child("data")
+                    .child("nickname");
+            ref.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            String nickname = (String) dataSnapshot.getValue();
+                            if (nickname != null) {
+                                holder.tvFounderName.setText(nickname);
+                            }
+                            ref.removeEventListener(this);
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            ref.removeEventListener(this);
+                        }
+                    });
             holder.radioButton.setChecked(selectedPosition == position);
             holder.itemView.setTag(position);
+
         }
 
         @Override

@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -18,8 +19,15 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Arrays;
 
@@ -30,22 +38,33 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     private static final int RC_SIGN_IN = 1;
     private static final int RC_ADD_ITEM = 2;
+    private static final int RC_EDIT_PROFILE = 3;
     private final String TAG = getClass().getSimpleName();
     private FirebaseUser fuser;
     private DrawerLayout drawer;
-    private TextView tvName;
+    private TextView tvNickname;
     private TextView tvAccount;
     private NavigationView navigationView;
+    private FirebaseAuth firebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-        firebaseAuth.addAuthStateListener(this);
-
         initView();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseAuth.addAuthStateListener(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        firebaseAuth.removeAuthStateListener(this);
     }
 
     private void initView() {
@@ -71,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        tvName = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userName);
+        tvNickname = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userNickname);
         tvAccount = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userAccount);
     }
 
@@ -100,6 +119,11 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            return true;
+        }
+        if (id == R.id.menu_editProfile) {
+            Intent intent = new Intent(this, EditProfileActivity.class);
+            startActivityForResult(intent, RC_EDIT_PROFILE);
             return true;
         }
 
@@ -145,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     private void initAfterSignIn() {
-        tvName.setText(fuser.getDisplayName());
+        updateNickname();
         tvAccount.setText(fuser.getEmail());
 
         getSupportFragmentManager().beginTransaction()
@@ -154,12 +178,48 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         navigationView.setCheckedItem(R.id.nav_order);
     }
 
+    private void updateNickname() {
+        final DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(fuser.getUid())
+                .child("data")
+                .child("nickname");
+        ref.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        String nickname = (String) dataSnapshot.getValue();
+                        if (nickname != null) {
+                            tvNickname.setText(nickname);
+                        } else {
+                            String tempName = fuser.getEmail().split("@")[0];
+                            ref.setValue(tempName);
+                            tvNickname.setText(tempName);
+                        }
+                        ref.removeEventListener(this);
+                    }
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        ref.removeEventListener(this);
+                    }
+                });
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case RC_SIGN_IN:
-                initAfterSignIn();
+                if (resultCode == RESULT_OK) {
+                    initAfterSignIn();
+                    Intent intent = new Intent(this, EditProfileActivity.class);
+                    startActivityForResult(intent, RC_EDIT_PROFILE);
+                }
+                break;
+            case RC_EDIT_PROFILE:
+                if (resultCode == RESULT_OK) {
+                    updateNickname();
+                    Snackbar.make(tvNickname, "修改成功", Snackbar.LENGTH_LONG).show();
+                }
                 break;
         }
     }

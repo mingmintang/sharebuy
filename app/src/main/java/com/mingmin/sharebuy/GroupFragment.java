@@ -223,7 +223,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         String groupId = fdb.getReference("groups")
                 .push()
                 .getKey();
-        final Group group = new Group(groupId, groupName, fuser.getUid(), fuser.getDisplayName());
+        final Group group = new Group(groupId, groupName, fuser.getUid());
         fdb.getReference("groups")
                 .child(group.getId())
                 .setValue(group)

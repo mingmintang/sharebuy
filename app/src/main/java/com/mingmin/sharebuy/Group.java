@@ -1,15 +1,11 @@
 package com.mingmin.sharebuy;
 
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ServerValue;
-
 import java.util.Random;
 
 public class Group {
     private String id; // Created by FirebaseDatabase push method
     private String name;
     private String founderUid;
-    private String founderName;
     private long createdTime;
     private long nCreatedTime; // Negative version for firebase desc sorting
     private int searchCode;
@@ -18,11 +14,10 @@ public class Group {
     private Group() {
     }
 
-    public Group(String id, String name, String founderUid, String founderName) {
+    public Group(String id, String name, String founderUid) {
         this.id = id;
         this.name = name;
         this.founderUid = founderUid;
-        this.founderName = founderName;
         createdTime = System.currentTimeMillis();
         nCreatedTime = -createdTime;
         searchCode = new Random(createdTime).nextInt(999998) + 1;
@@ -50,14 +45,6 @@ public class Group {
 
     public void setFounderUid(String founderUid) {
         this.founderUid = founderUid;
-    }
-
-    public String getFounderName() {
-        return founderName;
-    }
-
-    public void setFounderName(String founderName) {
-        this.founderName = founderName;
     }
 
     public long getCreatedTime() {

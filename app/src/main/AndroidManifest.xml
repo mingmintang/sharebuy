@@ -28,6 +28,7 @@
         <activity
             android:name=".AddOrderActivity"
             android:screenOrientation="portrait" />
+        <activity android:name=".EditProfileActivity"></activity>
     </application>
 
 </manifest>
