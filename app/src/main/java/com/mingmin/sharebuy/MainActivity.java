@@ -28,6 +28,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.Arrays;
 
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     private TextView tvAccount;
     private NavigationView navigationView;
     private FirebaseAuth firebaseAuth;
+    private User user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,18 +136,17 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-
         switch (id) {
             case R.id.nav_order:
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.frame_layout, OrderListFragment.getInstance(fuser))
+                        .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
                         .commit();
                 break;
             case R.id.nav_order_closed:
                 break;
             case R.id.nav_group:
                 getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.frame_layout, GroupFragment.getInstance(fuser))
+                        .replace(R.id.frame_layout, GroupFragment.getInstance(user))
                         .commit();
                 break;
         }
@@ -165,6 +166,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     RC_SIGN_IN);
         } else {
             initAfterSignIn();
+            SharebuyFirebaseInstanceIdService.checkRegistrationUpdated();
         }
     }
 
@@ -172,8 +174,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         updateNickname();
         tvAccount.setText(fuser.getEmail());
 
+        user = new User(fuser.getUid(), tvNickname.getText().toString());
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.frame_layout, OrderListFragment.getInstance(fuser))
+                .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
                 .commit();
         navigationView.setCheckedItem(R.id.nav_order);
     }
@@ -184,24 +187,22 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 .child(fuser.getUid())
                 .child("data")
                 .child("nickname");
-        ref.addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        String nickname = (String) dataSnapshot.getValue();
-                        if (nickname != null) {
-                            tvNickname.setText(nickname);
-                        } else {
-                            String tempName = fuser.getEmail().split("@")[0];
-                            ref.setValue(tempName);
-                            tvNickname.setText(tempName);
-                        }
-                        ref.removeEventListener(this);
-                    }
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        ref.removeEventListener(this);
-                    }
-                });
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                String nickname = (String) dataSnapshot.getValue();
+                if (nickname != null) {
+                    tvNickname.setText(nickname);
+                } else {
+                    String tempName = fuser.getEmail().split("@")[0];
+                    ref.setValue(tempName);
+                    tvNickname.setText(tempName);
+                }
+            }
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+            }
+        });
     }
 
     @Override

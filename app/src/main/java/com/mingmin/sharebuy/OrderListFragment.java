@@ -15,17 +15,16 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 
 public class OrderListFragment extends Fragment {
     private static OrderListFragment fragment;
-    private FirebaseUser user;
+    private User user;
     private FirebaseRecyclerAdapter<Order, OrderHolder> adapter;
     private OnFragmentInteractionListener mListener;
 
-    public static OrderListFragment getInstance(FirebaseUser user) {
+    public static OrderListFragment getInstance(User user) {
         if (fragment == null) {
             fragment = new OrderListFragment();
         }

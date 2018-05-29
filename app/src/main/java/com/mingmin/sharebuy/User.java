@@ -2,14 +2,11 @@ package com.mingmin.sharebuy;
 
 public class User {
     private String uid;
-    private String name;
+    private String nickname;
 
-    private User() {
-    }
-
-    public User(String uid, String name) {
+    public User(String uid, String nickname) {
         this.uid = uid;
-        this.name = name;
+        this.nickname = nickname;
     }
 
     public String getUid() {
@@ -20,11 +17,11 @@ public class User {
         this.uid = uid;
     }
 
-    public String getName() {
-        return name;
+    public String getNickname() {
+        return nickname;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 }

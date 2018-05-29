@@ -1,62 +1,52 @@
 package com.mingmin.sharebuy;
 
 import android.content.Context;
-import android.database.DataSetObserver;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
-import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
-import com.firebase.ui.database.FirebaseListAdapter;
-import com.firebase.ui.database.FirebaseListOptions;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 
 public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener, JoinGroupDialog.OnJoinGroupListener {
     private final String TAG = getClass().getSimpleName();
     private static GroupFragment fragment;
-    private FirebaseUser fuser;
+    private User user;
     private OnFragmentInteractionListener mListener;
     private SpinnerAdapter adapter;
     private Spinner spinner;
     private FirebaseDatabase fdb;
     private DatabaseReference groupsRef;
     private GroupsValueEventListener groupsValueEventListener;
+    private ArrayList<Group> groups = new ArrayList<>();
 
-    public static GroupFragment getInstance(FirebaseUser fuser) {
+    public static GroupFragment getInstance(User user) {
         if (fragment == null) {
             fragment = new GroupFragment();
         }
-        fragment.fuser = fuser;
+        fragment.user = user;
 
         return fragment;
     }
@@ -76,27 +66,44 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     private void initViews(View view) {
-        ImageButton ibEdit = view.findViewById(R.id.group_edit);
-        final PopupMenu popup = new PopupMenu(getContext(), ibEdit);
-        popup.getMenuInflater().inflate(R.menu.fragment_group_edit, popup.getMenu());
+        ImageButton ibMenu = view.findViewById(R.id.group_menu);
+        final PopupMenu popup = new PopupMenu(getContext(), ibMenu);
+        popup.getMenuInflater().inflate(R.menu.fragment_group_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(this);
-        ibEdit.setOnClickListener(new View.OnClickListener() {
+        ibMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 popup.show();
             }
         });
 
+        final ImageButton ibManage = view.findViewById(R.id.group_manage);
+
         spinner = view.findViewById(R.id.group_spinner);
         groupsValueEventListener = new GroupsValueEventListener();
         groupsRef = fdb.getReference("users")
-                .child(fuser.getUid())
+                .child(user.getUid())
                 .child("groups");
         groupsRef.addValueEventListener(groupsValueEventListener);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-
+                final Group group = groups.get(position);
+                if (group.getFounderUid().equals(user.getUid())) {
+                    ibManage.setEnabled(true);
+                    ibManage.setImageResource(R.drawable.ic_group_setting);
+                    ibManage.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(getContext(), GroupManageActivity.class);
+                            intent.putExtra("group", group);
+                            startActivity(intent);
+                        }
+                    });
+                } else {
+                    ibManage.setEnabled(false);
+                    ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
+                }
             }
 
             @Override
@@ -139,15 +146,17 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.group_edit_join:
+            case R.id.group_menu_join:
                 JoinGroupDialog.getInstance(GroupFragment.this)
                         .show(getFragmentManager(), "JOIN_GROUP");
                 return true;
-            case R.id.group_edit_add:
+            case R.id.group_menu_add:
                 AddGroupDialog.getInstance(GroupFragment.this)
                         .show(getFragmentManager(), "ADD_GROUP");
                 return true;
-            case R.id.group_edit_exit:
+            case R.id.group_menu_info:
+                return true;
+            case R.id.group_menu_exit:
                 return true;
             default:
                 return false;
@@ -169,40 +178,42 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         void onFragmentInteraction(Uri uri);
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.d(TAG, "onActivityResult: " + requestCode);
+    }
+
     class GroupsValueEventListener implements ValueEventListener {
-        private ArrayList<Group> groups = new ArrayList<>();
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
             final HashMap<String, Boolean> groupIds = (HashMap<String, Boolean>) dataSnapshot.getValue();
             if (groupIds != null && !groupIds.isEmpty()) {
                 groups.clear();
                 for (String groupId : groupIds.keySet()) {
-                    Log.d(TAG, "onDataChange: " + groupId);
-                    final DatabaseReference ref = fdb.getReference("groups").child(groupId);
-                    ref.addValueEventListener(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            Group group = dataSnapshot.getValue(Group.class);
-                            Log.d(TAG, "group: " + group.toString());
-                            groups.add(group);
-                            ref.removeEventListener(this);
-                            if (groups.size() == groupIds.size()) {
-                                Collections.sort(groups, new Comparator<Group>() {
-                                    @Override
-                                    public int compare(Group o1, Group o2) {
-                                        return (int) (o2.getCreatedTime() - o1.getCreatedTime());
+                    fdb.getReference("groups").child(groupId)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    Group group = dataSnapshot.getValue(Group.class);
+                                    groups.add(group);
+                                    if (groups.size() == groupIds.size()) {
+                                        Collections.sort(groups, new Comparator<Group>() {
+                                            @Override
+                                            public int compare(Group o1, Group o2) {
+                                                return (int) (o2.getCreatedTime() - o1.getCreatedTime());
+                                            }
+                                        });
+                                        adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
+                                        spinner.setAdapter(adapter);
                                     }
-                                });
-                                adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
-                                spinner.setAdapter(adapter);
-                            }
-                        }
+                                }
 
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
 
-                        }
-                    });
+                                }
+                            });
                 }
             }
         }
@@ -223,7 +234,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         String groupId = fdb.getReference("groups")
                 .push()
                 .getKey();
-        final Group group = new Group(groupId, groupName, fuser.getUid());
+        final Group group = new Group(groupId, groupName, user.getUid(), user.getNickname());
         fdb.getReference("groups")
                 .child(group.getId())
                 .setValue(group)

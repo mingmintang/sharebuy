@@ -1,11 +1,13 @@
 package com.mingmin.sharebuy;
 
+import java.io.Serializable;
 import java.util.Random;
 
-public class Group {
+public class Group implements Serializable{
     private String id; // Created by FirebaseDatabase push method
     private String name;
     private String founderUid;
+    private String founderNickname;
     private long createdTime;
     private long nCreatedTime; // Negative version for firebase desc sorting
     private int searchCode;
@@ -14,10 +16,11 @@ public class Group {
     private Group() {
     }
 
-    public Group(String id, String name, String founderUid) {
+    public Group(String id, String name, String founderUid, String founderNickname) {
         this.id = id;
         this.name = name;
         this.founderUid = founderUid;
+        this.founderNickname = founderNickname;
         createdTime = System.currentTimeMillis();
         nCreatedTime = -createdTime;
         searchCode = new Random(createdTime).nextInt(999998) + 1;
@@ -47,6 +50,14 @@ public class Group {
         this.founderUid = founderUid;
     }
 
+    public String getFounderNickname() {
+        return founderNickname;
+    }
+
+    public void setFounderNickname(String founderNickname) {
+        this.founderNickname = founderNickname;
+    }
+
     public long getCreatedTime() {
         return createdTime;
     }
@@ -69,6 +80,6 @@ public class Group {
 
     @Override
     public String toString() {
-        return getName() + " (" + getSearchCode() + ")";
+        return getName() + " (" + getFounderNickname() + ")";
     }
 }

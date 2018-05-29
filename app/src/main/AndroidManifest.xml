@@ -28,7 +28,20 @@
         <activity
             android:name=".AddOrderActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".EditProfileActivity"></activity>
+        <activity android:name=".EditProfileActivity" />
+
+        <service android:name=".SharebuyFirebaseInstanceIdService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
+        <service android:name=".SharebuyFirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <activity android:name=".GroupManageActivity"></activity>
     </application>
 
 </manifest>

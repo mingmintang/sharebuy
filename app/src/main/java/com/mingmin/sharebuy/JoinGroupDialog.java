@@ -22,12 +22,19 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
+import com.mingmin.sharebuy.notification.GroupNotification;
+import com.mingmin.sharebuy.notification.Notification;
 
 import java.util.ArrayList;
 
@@ -37,6 +44,8 @@ public class JoinGroupDialog extends DialogFragment {
     private OnJoinGroupListener listener;
     private ArrayList<Group> groups = new ArrayList<>();
     private RecyclerView recyclerView;
+    private Query searchCodeQuery;
+    private ValueEventListener searchCodeEvent;
 
     private void setListener(OnJoinGroupListener listener) {
         this.listener = listener;
@@ -78,36 +87,68 @@ public class JoinGroupDialog extends DialogFragment {
                     etSearchCode.setError("不能空白");
                 } else {
                     int searchCode = Integer.parseInt(etSearchCode.getText().toString());
-                    FirebaseDatabase.getInstance()
+                    searchCodeQuery = FirebaseDatabase.getInstance()
                             .getReference("groups")
                             .orderByChild("searchCode")
-                            .equalTo(searchCode)
-                            .addValueEventListener(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    groups.clear();
-                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        Group group = item.getValue(Group.class);
-                                        Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
-                                        groups.add(group);
-                                    }
-                                    recyclerView.setAdapter(new GroupAdapter(groups));
-                                }
+                            .equalTo(searchCode);
+                    searchCodeEvent = new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            groups.clear();
+                            for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                Group group = item.getValue(Group.class);
+                                Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
+                                groups.add(group);
+                            }
+                            recyclerView.setAdapter(new GroupAdapter(groups));
+                        }
 
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
 
-                                }
-                            });
+                        }
+                    };
+                    searchCodeQuery.addValueEventListener(searchCodeEvent);
                 }
             }
         });
+
         Button btnConfirm = view.findViewById(R.id.join_group_confirm);
+        btnConfirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
+                Group group = groups.get(adapter.getSelectedPosition());
+                FirebaseUser fuser = FirebaseAuth.getInstance().getCurrentUser();
+                if (fuser != null) {
+                    GroupNotification notification = new GroupNotification(
+                            fuser.getUid(),
+                            group.getFounderUid(),
+                            Notification.ACTION_REQUEST_JOIN_GROUP,
+                            group.getId());
+
+                    FirebaseDatabase.getInstance()
+                            .getReference("groups")
+                            .child(group.getId())
+                            .child("notifications")
+                            .push()
+                            .setValue(notification);
+                }
+            }
+        });
 
         AlertDialog dialog = new AlertDialog.Builder(getActivity())
                 .setView(view)
                 .create();
         return dialog;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (searchCodeQuery != null && searchCodeEvent != null) {
+            searchCodeQuery.removeEventListener(searchCodeEvent);
+        }
     }
 
     public interface OnJoinGroupListener {
@@ -143,6 +184,10 @@ public class JoinGroupDialog extends DialogFragment {
         private ArrayList<Group> groups;
         private int selectedPosition = 0;
 
+        public int getSelectedPosition() {
+            return selectedPosition;
+        }
+
         GroupAdapter(ArrayList<Group> groups) {
             this.groups = groups;
         }
@@ -159,23 +204,21 @@ public class JoinGroupDialog extends DialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            final DatabaseReference ref = FirebaseDatabase.getInstance()
+            FirebaseDatabase.getInstance()
                     .getReference("users")
                     .child(group.getFounderUid())
                     .child("data")
-                    .child("nickname");
-            ref.addValueEventListener(new ValueEventListener() {
+                    .child("nickname")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             String nickname = (String) dataSnapshot.getValue();
                             if (nickname != null) {
                                 holder.tvFounderName.setText(nickname);
                             }
-                            ref.removeEventListener(this);
                         }
                         @Override
                         public void onCancelled(DatabaseError databaseError) {
-                            ref.removeEventListener(this);
                         }
                     });
             holder.radioButton.setChecked(selectedPosition == position);
