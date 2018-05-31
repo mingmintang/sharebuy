@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/group_manage_nav_joined"
+        android:icon="@drawable/ic_group_members"
+        android:title="已加入成員" />
+    <item
+        android:id="@+id/group_manage_nav_joining"
+        android:icon="@drawable/ic_group_members_joining"
+        android:title="未加入成員" />
+</menu>

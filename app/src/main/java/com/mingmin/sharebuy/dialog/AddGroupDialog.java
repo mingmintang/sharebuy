@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.dialog;
 
 import android.app.Dialog;
 import android.os.Bundle;
@@ -11,6 +11,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+
+import com.mingmin.sharebuy.R;
 
 public class AddGroupDialog extends DialogFragment {
     private static AddGroupDialog instance;

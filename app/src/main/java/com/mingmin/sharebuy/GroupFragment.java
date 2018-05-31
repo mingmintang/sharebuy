@@ -24,6 +24,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mingmin.sharebuy.dialog.AddGroupDialog;
+import com.mingmin.sharebuy.dialog.JoinGroupDialog;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -241,25 +243,15 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        fdb.getReference("groups")
-                                .child(group.getId())
-                                .child("users")
+                        fdb.getReference("users")
                                 .child(group.getFounderUid())
+                                .child("groups")
+                                .child(group.getId())
                                 .setValue(true)
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        fdb.getReference("users")
-                                                .child(group.getFounderUid())
-                                                .child("groups")
-                                                .child(group.getId())
-                                                .setValue(true)
-                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                    @Override
-                                                    public void onSuccess(Void aVoid) {
-                                                        Snackbar.make(getView(), "新增群組成功", Snackbar.LENGTH_LONG).show();
-                                                    }
-                                                });
+                                        Snackbar.make(getView(), "新增群組成功", Snackbar.LENGTH_LONG).show();
                                     }
                                 });
                     }
