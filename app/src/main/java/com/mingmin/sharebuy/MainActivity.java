@@ -13,6 +13,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -159,6 +160,10 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         navigationView.setTag(null);
         int id = item.getItemId();
+        if (id == getCurrentNavigationItem()) {
+            drawer.closeDrawer(GravityCompat.START);
+            return false;
+        }
         switch (id) {
             case R.id.nav_order:
                 fm.beginTransaction()
@@ -178,6 +183,16 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         navigationView.setCheckedItem(id);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private int getCurrentNavigationItem() {
+        for (int i = 0; i < navigationView.getMenu().size(); i++) {
+            MenuItem item = navigationView.getMenu().getItem(i);
+            if (item.isChecked()) {
+                return item.getItemId();
+            }
+        }
+        return  -1;
     }
 
     @Override
