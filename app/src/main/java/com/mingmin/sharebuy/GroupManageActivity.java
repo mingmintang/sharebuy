@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GroupManageActivity extends AppCompatActivity {
 
@@ -38,6 +40,7 @@ public class GroupManageActivity extends AppCompatActivity {
         setContentView(R.layout.activity_group_manage);
 
         group = (Group) getIntent().getSerializableExtra("group");
+        int selectedItemId = getIntent().getIntExtra("selectedItemId", R.id.group_manage_nav_joined);
 
         fdb = FirebaseDatabase.getInstance();
         membersRef = fdb.getReference("groups")
@@ -63,13 +66,19 @@ public class GroupManageActivity extends AppCompatActivity {
                 return false;
             }
         });
-        navigationView.setSelectedItemId(R.id.group_manage_nav_joined);
+        navigationView.setSelectedItemId(selectedItemId);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         removeAllValueEventListener();
+    }
+
+    @Override
+    public void onBackPressed() {
+        setResult(RESULT_OK);
+        super.onBackPressed();
     }
 
     private void setupJoinedRecyclerView() {
@@ -177,7 +186,7 @@ public class GroupManageActivity extends AppCompatActivity {
             ViewHolder(View itemView) {
                 super(itemView);
                 tvNickname = itemView.findViewById(R.id.joined_group_member_nickname);
-                btnRemove = itemView.findViewById(R.id.joining_group_member_decline);
+                btnRemove = itemView.findViewById(R.id.joined_group_member_remove);
             }
         }
         JoinedMemberAdapter(ArrayList<User> members) {
@@ -240,7 +249,10 @@ public class GroupManageActivity extends AppCompatActivity {
 
     class JoiningMemberAdapter extends RecyclerView.Adapter implements ConfirmDialog.OnConfirmListener{
         private ArrayList<User> members;
-
+        class TagData {
+            User user;
+            int clickedViewId;
+        }
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvNickname;
             Button btnAccept;
@@ -268,11 +280,14 @@ public class GroupManageActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
             final ViewHolder holder = (ViewHolder) viewHolder;
             final User user = members.get(position);
-            holder.itemView.setTag(user);
+            final TagData tagData = new TagData();
+            tagData.user = user;
+            holder.itemView.setTag(tagData);
             holder.tvNickname.setText(user.getNickname());
             holder.btnAccept.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    tagData.clickedViewId = v.getId();
                     ConfirmDialog.getInstance(JoiningMemberAdapter.this,
                             "加入群組",
                             "確定將 " + user.getNickname() + " 加入群組？",
@@ -283,6 +298,12 @@ public class GroupManageActivity extends AppCompatActivity {
             holder.btnDecline.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    tagData.clickedViewId = v.getId();
+                    ConfirmDialog.getInstance(JoiningMemberAdapter.this,
+                            "取消加入申請",
+                            "取消 " + user.getNickname() + " 加入群組申請？",
+                            holder.itemView)
+                            .show(getSupportFragmentManager(), "GroupJoinCancel");
                 }
             });
         }
@@ -294,7 +315,18 @@ public class GroupManageActivity extends AppCompatActivity {
 
         @Override
         public void onConfirm(View view) {
-            final User user = (User) view.getTag();
+            final TagData tag = (TagData) view.getTag();
+            switch (tag.clickedViewId) {
+                case R.id.joining_group_member_accept:
+                    acceptJoinGroup(tag.user);
+                    break;
+                case R.id.joining_group_member_decline:
+                    declineJoinGroup(tag.user);
+                    break;
+            }
+        }
+
+        private void acceptJoinGroup(final User user) {
             membersRef.child(user.getUid()).setValue(true)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
@@ -310,6 +342,16 @@ public class GroupManageActivity extends AppCompatActivity {
                                             Snackbar.make(recyclerView, "加入群組成功", Snackbar.LENGTH_LONG).show();
                                         }
                                     });
+                        }
+                    });
+        }
+
+        private void declineJoinGroup(final User user) {
+            membersRef.child(user.getUid()).removeValue()
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Snackbar.make(recyclerView, "已取消加入申請", Snackbar.LENGTH_LONG).show();
                         }
                     });
         }

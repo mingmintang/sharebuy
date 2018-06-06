@@ -38,20 +38,15 @@ public class JoinGroupDialog extends DialogFragment {
 
     private static JoinGroupDialog instance;
     private OnJoinGroupListener listener;
-    private ArrayList<Group> groups = new ArrayList<>();
+    private ArrayList<Group> searchedGroups = new ArrayList<>();
     private RecyclerView recyclerView;
-    private Query searchCodeQuery;
-    private ValueEventListener searchCodeEvent;
-
-    private void setListener(OnJoinGroupListener listener) {
-        this.listener = listener;
-    }
 
     public static JoinGroupDialog getInstance(OnJoinGroupListener listener) {
         if (instance == null) {
             instance = new JoinGroupDialog();
-            instance.setListener(listener);
         }
+        instance.listener = listener;
+
         return instance;
     }
 
@@ -61,7 +56,29 @@ public class JoinGroupDialog extends DialogFragment {
         View view = LayoutInflater.from(getContext())
                 .inflate(R.layout.dialog_join_group, null, false);
 
+        final AlertDialog dialog = new AlertDialog.Builder(getActivity())
+                .setView(view)
+                .create();
+        dialog.getWindow().setWindowAnimations(R.style.dialog_animation);
+
         initRecyclerView(view);
+
+        final Button btnConfirm = view.findViewById(R.id.join_group_confirm);
+        btnConfirm.setEnabled(false);
+        btnConfirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
+                adapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+                    @Override
+                    public void onChanged() {
+                        super.onChanged();
+                    }
+                });
+                listener.onJoinGroupConfirm(searchedGroups.get(adapter.getSelectedPosition()));
+                dialog.dismiss();
+            }
+        });
 
         final EditText etSearchCode = view.findViewById(R.id.join_group_searchCode);
         etSearchCode.setFilters(new InputFilter[]{new InputFilter() {
@@ -83,68 +100,36 @@ public class JoinGroupDialog extends DialogFragment {
                     etSearchCode.setError("不能空白");
                 } else {
                     int searchCode = Integer.parseInt(etSearchCode.getText().toString());
-                    searchCodeQuery = FirebaseDatabase.getInstance()
-                            .getReference("groups")
-                            .orderByChild("searchCode")
-                            .equalTo(searchCode);
-                    searchCodeEvent = new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            groups.clear();
-                            for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                Group group = item.getValue(Group.class);
-                                Log.d("wwwww", "onDataChange: " + group.getName() + "/" + group.getSearchCode());
-                                groups.add(group);
-                            }
-                            recyclerView.setAdapter(new GroupAdapter(groups));
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-
-                        }
-                    };
-                    searchCodeQuery.addValueEventListener(searchCodeEvent);
-                }
-            }
-        });
-
-        Button btnConfirm = view.findViewById(R.id.join_group_confirm);
-        btnConfirm.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
-                Group group = groups.get(adapter.getSelectedPosition());
-                FirebaseUser fuser = FirebaseAuth.getInstance().getCurrentUser();
-                if (fuser != null) {
-                    GroupNotification notification = new GroupNotification(
-                            fuser.getUid(),
-                            group.getFounderUid(),
-                            Notification.ACTION_REQUEST_JOIN_GROUP,
-                            group.getId());
-
                     FirebaseDatabase.getInstance()
                             .getReference("groups")
-                            .child(group.getId())
-                            .child("notifications")
-                            .push()
-                            .setValue(notification);
+                            .orderByChild("searchCode")
+                            .equalTo(searchCode)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    searchedGroups.clear();
+                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                        Group group = item.getValue(Group.class);
+                                        searchedGroups.add(group);
+                                    }
+                                    recyclerView.setAdapter(new GroupAdapter(searchedGroups));
+                                    if (searchedGroups.size() > 0) {
+                                        btnConfirm.setEnabled(true);
+                                    } else {
+                                        btnConfirm.setEnabled(false);
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
                 }
             }
         });
 
-        AlertDialog dialog = new AlertDialog.Builder(getActivity())
-                .setView(view)
-                .create();
         return dialog;
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        if (searchCodeQuery != null && searchCodeEvent != null) {
-            searchCodeQuery.removeEventListener(searchCodeEvent);
-        }
     }
 
     public interface OnJoinGroupListener {

@@ -26,6 +26,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
+import com.mingmin.sharebuy.notification.GroupNotification;
+import com.mingmin.sharebuy.notification.Notification;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,7 +101,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                         public void onClick(View v) {
                             Intent intent = new Intent(getContext(), GroupManageActivity.class);
                             intent.putExtra("group", group);
-                            startActivity(intent);
+                            getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
                         }
                     });
                 } else {
@@ -182,8 +184,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.d(TAG, "onActivityResult: ");
         super.onActivityResult(requestCode, resultCode, data);
-        Log.d(TAG, "onActivityResult: " + requestCode);
     }
 
     class GroupsValueEventListener implements ValueEventListener {
@@ -228,7 +230,18 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
 
     @Override
     public void onJoinGroupConfirm(Group group) {
+        GroupNotification notification = new GroupNotification(
+                user.getUid(),
+                group.getFounderUid(),
+                Notification.ACTION_REQUEST_JOIN_GROUP,
+                group.getId());
 
+        fdb.getReference("groups")
+                .child(group.getId())
+                .child("notify")
+                .child("requestJoinGroup")
+                .push()
+                .setValue(notification);
     }
 
     @Override

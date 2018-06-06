@@ -25,8 +25,8 @@ public class AddGroupDialog extends DialogFragment {
     public static AddGroupDialog getInstance(OnAddGroupListener listener) {
         if (instance == null) {
             instance = new AddGroupDialog();
-            instance.setListener(listener);
         }
+        instance.setListener(listener);
         return instance;
     }
 
@@ -39,11 +39,11 @@ public class AddGroupDialog extends DialogFragment {
         final EditText etName = view.findViewById(R.id.add_group_name);
         final TextInputLayout tilName = view.findViewById(R.id.add_group_name_layout);
 
-        final AlertDialog alertDialog = new AlertDialog.Builder(getContext())
+        final AlertDialog dialog = new AlertDialog.Builder(getContext())
                 .setTitle("新增群組")
                 .setView(view)
                 .create();
-        alertDialog.getWindow().setWindowAnimations(R.style.dialog_animation);
+        dialog.getWindow().setWindowAnimations(R.style.dialog_animation);
 
         Button btnConfirm = view.findViewById(R.id.add_group_confirm);
         btnConfirm.setOnClickListener(new View.OnClickListener() {
@@ -55,12 +55,12 @@ public class AddGroupDialog extends DialogFragment {
                 } else {
                     tilName.setError("");
                     listener.onAddGroupConfirm(groupName);
-                    alertDialog.dismiss();
+                    dialog.dismiss();
                 }
             }
         });
 
-        return alertDialog;
+        return dialog;
     }
 
     public interface OnAddGroupListener {

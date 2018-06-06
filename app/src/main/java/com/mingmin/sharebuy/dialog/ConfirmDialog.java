@@ -8,6 +8,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.view.View;
 
+import com.mingmin.sharebuy.R;
+
 public class ConfirmDialog extends DialogFragment {
     private static ConfirmDialog instance;
     private OnConfirmListener listener;
@@ -41,6 +43,7 @@ public class ConfirmDialog extends DialogFragment {
                 })
                 .setNegativeButton("取消", null)
                 .create();
+        dialog.getWindow().setWindowAnimations(R.style.dialog_animation);
         return dialog;
     }
 

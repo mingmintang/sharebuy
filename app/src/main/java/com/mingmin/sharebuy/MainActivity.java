@@ -7,20 +7,18 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import com.firebase.ui.auth.AuthUI;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -28,7 +26,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.Arrays;
 
@@ -37,9 +34,10 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         OrderListFragment.OnFragmentInteractionListener,
         GroupFragment.OnFragmentInteractionListener {
 
-    private static final int RC_SIGN_IN = 1;
-    private static final int RC_ADD_ITEM = 2;
-    private static final int RC_EDIT_PROFILE = 3;
+    public static final int RC_SIGN_IN = 1;
+    public static final int RC_ADD_ITEM = 2;
+    public static final int RC_EDIT_PROFILE = 3;
+    public static final int RC_GROUP_MANAGE = 4;
     private final String TAG = getClass().getSimpleName();
     private FirebaseUser fuser;
     private DrawerLayout drawer;
@@ -48,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     private NavigationView navigationView;
     private FirebaseAuth firebaseAuth;
     private User user;
+    private FragmentManager fm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +60,27 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         super.onStart();
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseAuth.addAuthStateListener(this);
+        fm = getSupportFragmentManager();
+        switchNavItemByTag();
+    }
+
+    /**
+     * Switch navigation menu item by tag of NavigationView.
+     * Tag will be set null after switching.
+     * @return true if tag is not null, false if tag is null
+     */
+    private boolean switchNavItemByTag() {
+        if (navigationView.getTag() != null) {
+            final int itemId = (int) navigationView.getTag();
+            navigationView.post(new Runnable() {
+                @Override
+                public void run() {
+                    navigationView.getMenu().performIdentifierAction(itemId, 0);
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -101,7 +121,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            if (!switchNavItemByTag()) {
+                finish();
+            }
         }
     }
 
@@ -135,22 +157,25 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        navigationView.setTag(null);
         int id = item.getItemId();
         switch (id) {
             case R.id.nav_order:
-                getSupportFragmentManager().beginTransaction()
+                fm.beginTransaction()
                         .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
                         .commit();
                 break;
             case R.id.nav_order_closed:
                 break;
             case R.id.nav_group:
-                getSupportFragmentManager().beginTransaction()
+                navigationView.setTag(R.id.nav_order);
+                fm.beginTransaction()
                         .replace(R.id.frame_layout, GroupFragment.getInstance(user))
+                        .addToBackStack(null)
                         .commit();
                 break;
         }
-
+        navigationView.setCheckedItem(id);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -220,6 +245,11 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 if (resultCode == RESULT_OK) {
                     updateNickname();
                     Snackbar.make(tvNickname, "修改成功", Snackbar.LENGTH_LONG).show();
+                }
+                break;
+            case RC_GROUP_MANAGE:
+                if (resultCode == RESULT_OK) {
+                    navigationView.setTag(R.id.nav_group);
                 }
                 break;
         }

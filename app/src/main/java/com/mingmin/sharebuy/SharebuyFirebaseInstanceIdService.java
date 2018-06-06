@@ -20,13 +20,14 @@ public class SharebuyFirebaseInstanceIdService extends FirebaseInstanceIdService
 
     private static DatabaseReference getDatabaseReference() {
         FirebaseUser fuser = FirebaseAuth.getInstance().getCurrentUser();
+        String token = FirebaseInstanceId.getInstance().getToken();
         DatabaseReference ref = null;
-        if (fuser != null) {
+        if (fuser != null && token != null) {
             ref = FirebaseDatabase.getInstance()
                     .getReference("users")
                     .child(fuser.getUid())
-                    .child("data")
-                    .child("token");
+                    .child("tokens")
+                    .child(token);
         }
         return ref;
     }
@@ -34,7 +35,7 @@ public class SharebuyFirebaseInstanceIdService extends FirebaseInstanceIdService
     public static void sendRegistrationToFirebase() {
         DatabaseReference ref = getDatabaseReference();
         if (ref != null) {
-            ref.setValue(FirebaseInstanceId.getInstance().getToken());
+            ref.setValue(true);
         }
     }
 
@@ -44,10 +45,8 @@ public class SharebuyFirebaseInstanceIdService extends FirebaseInstanceIdService
             ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    String preToken = (String) dataSnapshot.getValue();
-                    String token = FirebaseInstanceId.getInstance().getToken();
-                    if (preToken == null || !preToken.equals(token)) {
-                        ref.setValue(token);
+                    if (dataSnapshot.getValue() == null) {
+                        ref.setValue(true);
                     }
                 }
 
