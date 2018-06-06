@@ -41,9 +41,11 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".GroupManageActivity"
+        <activity
+            android:name=".GroupManageActivity"
             android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait" />
+        <activity android:name=".GroupInfoActivity"></activity>
     </application>
 
 </manifest>

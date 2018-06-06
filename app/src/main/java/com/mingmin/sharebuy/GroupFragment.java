@@ -159,6 +159,9 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                         .show(getFragmentManager(), "ADD_GROUP");
                 return true;
             case R.id.group_menu_info:
+                Intent intent = new Intent(getContext(), GroupInfoActivity.class);
+                intent.putExtra("group", groups.get(spinner.getSelectedItemPosition()));
+                getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_INFO);
                 return true;
             case R.id.group_menu_exit:
                 return true;

@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     public static final int RC_ADD_ITEM = 2;
     public static final int RC_EDIT_PROFILE = 3;
     public static final int RC_GROUP_MANAGE = 4;
+    public static final int RC_GROUP_INFO = 5;
     private final String TAG = getClass().getSimpleName();
     private FirebaseUser fuser;
     private DrawerLayout drawer;
@@ -263,6 +264,11 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 }
                 break;
             case RC_GROUP_MANAGE:
+                if (resultCode == RESULT_OK) {
+                    navigationView.setTag(R.id.nav_group);
+                }
+                break;
+            case RC_GROUP_INFO:
                 if (resultCode == RESULT_OK) {
                     navigationView.setTag(R.id.nav_group);
                 }
