@@ -46,19 +46,13 @@ public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         Group group = dataSnapshot.getValue(Group.class);
 
-                        Intent intent = new Intent(SharebuyFirebaseMessagingService.this, GroupManageActivity.class);
+                        Intent intent = new Intent(SharebuyFirebaseMessagingService.this, MainActivity.class);
+                        intent.putExtra("goToGroupManage", true);
                         intent.putExtra("group", group);
-                        intent.putExtra("selectedItemId", R.id.group_manage_nav_joining);
-                        TaskStackBuilder taskStackBuilder = TaskStackBuilder.create(SharebuyFirebaseMessagingService.this);
-                        taskStackBuilder.addParentStack(GroupManageActivity.class);
-                        taskStackBuilder.addNextIntent(intent);
-                        PendingIntent pendingIntent = taskStackBuilder.getPendingIntent(
+                        PendingIntent pendingIntent = PendingIntent.getActivity(SharebuyFirebaseMessagingService.this,
                                 ACTION_REQUEST_JOIN_GROUP,
+                                intent,
                                 PendingIntent.FLAG_ONE_SHOT);
-//                        PendingIntent pendingIntent = PendingIntent.getActivity(SharebuyFirebaseMessagingService.this,
-//                                ACTION_REQUEST_JOIN_GROUP,
-//                                intent,
-//                                PendingIntent.FLAG_ONE_SHOT);
 
                         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                         NotificationCompat.Builder builder = new NotificationCompat.Builder(SharebuyFirebaseMessagingService.this,

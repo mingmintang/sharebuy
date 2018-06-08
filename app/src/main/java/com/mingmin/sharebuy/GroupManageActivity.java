@@ -1,5 +1,6 @@
 package com.mingmin.sharebuy;
 
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
@@ -79,6 +80,20 @@ public class GroupManageActivity extends AppCompatActivity {
     public void onBackPressed() {
         setResult(RESULT_OK);
         super.onBackPressed();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            Intent intent = new Intent();
+            intent.putExtra("navItemId", R.id.nav_group);
+            setResult(RESULT_OK, intent);
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void setupJoinedRecyclerView() {

@@ -33,6 +33,7 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener,
         NavigationView.OnNavigationItemSelectedListener,
         OrderListFragment.OnFragmentInteractionListener,
+        OrderHistoryFragment.OnFragmentInteractionListener,
         GroupFragment.OnFragmentInteractionListener {
 
     public static final int RC_SIGN_IN = 1;
@@ -49,46 +50,13 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     private FirebaseAuth firebaseAuth;
     private User user;
     private FragmentManager fm;
+    private int backToNavItemId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        firebaseAuth = FirebaseAuth.getInstance();
-        firebaseAuth.addAuthStateListener(this);
-        fm = getSupportFragmentManager();
-        switchNavItemByTag();
-    }
-
-    /**
-     * Switch navigation menu item by tag of NavigationView.
-     * Tag will be set null after switching.
-     * @return true if tag is not null, false if tag is null
-     */
-    private boolean switchNavItemByTag() {
-        if (navigationView.getTag() != null) {
-            final int itemId = (int) navigationView.getTag();
-            navigationView.post(new Runnable() {
-                @Override
-                public void run() {
-                    navigationView.getMenu().performIdentifierAction(itemId, 0);
-                }
-            });
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        firebaseAuth.removeAuthStateListener(this);
     }
 
     private void initView() {
@@ -119,12 +87,28 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        firebaseAuth = FirebaseAuth.getInstance();
+        firebaseAuth.addAuthStateListener(this);
+        fm = getSupportFragmentManager();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        firebaseAuth.removeAuthStateListener(this);
+    }
+
+    @Override
     public void onBackPressed() {
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            if (!switchNavItemByTag()) {
-                finish();
+            if (getCurrentNavigationItem() != R.id.nav_order) {
+                goToNavItemHome();
+            } else {
+                super.onBackPressed();
             }
         }
     }
@@ -159,7 +143,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        navigationView.setTag(null);
         int id = item.getItemId();
         if (id == getCurrentNavigationItem()) {
             drawer.closeDrawer(GravityCompat.START);
@@ -171,17 +154,17 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                         .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
                         .commit();
                 break;
-            case R.id.nav_order_closed:
+            case R.id.nav_order_history:
+                fm.beginTransaction()
+                        .replace(R.id.frame_layout, OrderHistoryFragment.getInstance(user))
+                        .commit();
                 break;
             case R.id.nav_group:
-                navigationView.setTag(R.id.nav_order);
                 fm.beginTransaction()
                         .replace(R.id.frame_layout, GroupFragment.getInstance(user))
-                        .addToBackStack(null)
                         .commit();
                 break;
         }
-        navigationView.setCheckedItem(id);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -214,12 +197,10 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     private void initAfterSignIn() {
         updateNickname();
         tvAccount.setText(fuser.getEmail());
-
         user = new User(fuser.getUid(), tvNickname.getText().toString());
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.frame_layout, OrderListFragment.getInstance(user))
-                .commit();
-        navigationView.setCheckedItem(R.id.nav_order);
+        if (!goToGroupManage() && !backToNavItemByFlag()) {
+            goToNavItemHome();
+        }
     }
 
     private void updateNickname() {
@@ -234,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 String nickname = (String) dataSnapshot.getValue();
                 if (nickname != null) {
                     tvNickname.setText(nickname);
+                    user.setNickname(nickname);
                 } else {
                     String tempName = fuser.getEmail().split("@")[0];
                     ref.setValue(tempName);
@@ -244,6 +226,39 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             public void onCancelled(DatabaseError databaseError) {
             }
         });
+    }
+
+    private void goToNavItemHome() {
+        goToNavItem(R.id.nav_order);
+    }
+
+    private void goToNavItem(int itemId) {
+        navigationView.getMenu().performIdentifierAction(itemId, 0);
+        navigationView.setCheckedItem(itemId);
+    }
+
+    private boolean backToNavItemByFlag() {
+        if (backToNavItemId != 0) {
+            goToNavItem(backToNavItemId);
+            backToNavItemId = 0;
+            return true;
+        }
+        return false;
+    }
+
+    private boolean goToGroupManage() {
+        boolean goToGroupManage = getIntent().getBooleanExtra("goToGroupManage", false);
+        getIntent().putExtra("goToGroupManage", false);
+        if (goToGroupManage) {
+            Group group = (Group) getIntent().getSerializableExtra("group");
+            goToNavItem(R.id.nav_group);
+            Intent intent = new Intent(MainActivity.this, GroupManageActivity.class);
+            intent.putExtra("group", group);
+            intent.putExtra("selectedItemId", R.id.group_manage_nav_joining);
+            startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -265,12 +280,12 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 break;
             case RC_GROUP_MANAGE:
                 if (resultCode == RESULT_OK) {
-                    navigationView.setTag(R.id.nav_group);
+                    backToNavItemId = R.id.nav_group;
                 }
                 break;
             case RC_GROUP_INFO:
                 if (resultCode == RESULT_OK) {
-                    navigationView.setTag(R.id.nav_group);
+                    backToNavItemId = R.id.nav_group;
                 }
                 break;
         }
@@ -278,6 +293,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     @Override
     public void onFragmentInteraction(Uri uri) {
-
+        Log.d(TAG, "onFragmentInteraction: " + uri.getPath());
     }
 }

@@ -43,9 +43,9 @@
 
         <activity
             android:name=".GroupManageActivity"
-            android:parentActivityName=".MainActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".GroupInfoActivity"></activity>
+        <activity android:name=".GroupInfoActivity"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>
