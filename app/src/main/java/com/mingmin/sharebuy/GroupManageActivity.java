@@ -1,14 +1,14 @@
 package com.mingmin.sharebuy;
 
-import android.content.Intent;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,9 +24,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
-public class GroupManageActivity extends AppCompatActivity {
+public class GroupManageActivity extends AppCompatActivity implements ConfirmDialog.OnConfirmListener {
 
     private DatabaseReference membersRef;
     private ValueEventListener joinedValueEventListener;
@@ -83,17 +82,40 @@ public class GroupManageActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_group_manage_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == android.R.id.home) {
-            Intent intent = new Intent();
-            intent.putExtra("navItemId", R.id.nav_group);
-            setResult(RESULT_OK, intent);
-            finish();
+        if (id == R.id.group_manage_menu_delete) {
+            String tag = "group_delete";
+            ConfirmDialog.getInstance(this,
+                    "刪除群組(危險操作)",
+                    "這將會刪除 " + group.getName() + " 群組，退出所有成員，刪除所有未接單內容",
+                    tag,
+                    true)
+                    .show(getSupportFragmentManager(), tag);
             return true;
         }
-
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onConfirm(Object tag) {
+        if (tag != null) {
+            switch ((String) tag) {
+                case "group_delete":
+                    deleteGroup();
+                    break;
+            }
+        }
+    }
+
+    private void deleteGroup() {
+
     }
 
     private void setupJoinedRecyclerView() {
@@ -220,7 +242,6 @@ public class GroupManageActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
             final ViewHolder holder = (ViewHolder) viewHolder;
             final User user = members.get(position);
-            holder.itemView.setTag(user);
             holder.tvNickname.setText(user.getNickname());
             holder.btnRemove.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -228,7 +249,7 @@ public class GroupManageActivity extends AppCompatActivity {
                     ConfirmDialog.getInstance(JoinedMemberAdapter.this,
                             "退出群組",
                             "確定將 " + user.getNickname() + " 退出群組？",
-                            holder.itemView)
+                            user)
                             .show(getSupportFragmentManager(), "GroupRemove");
                 }
             });
@@ -240,8 +261,8 @@ public class GroupManageActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onConfirm(View view) {
-            final User user = (User) view.getTag();
+        public void onConfirm(Object tag) {
+            final User user = (User) tag;
             membersRef.child(user.getUid()).removeValue()
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
@@ -297,7 +318,6 @@ public class GroupManageActivity extends AppCompatActivity {
             final User user = members.get(position);
             final TagData tagData = new TagData();
             tagData.user = user;
-            holder.itemView.setTag(tagData);
             holder.tvNickname.setText(user.getNickname());
             holder.btnAccept.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -306,7 +326,7 @@ public class GroupManageActivity extends AppCompatActivity {
                     ConfirmDialog.getInstance(JoiningMemberAdapter.this,
                             "加入群組",
                             "確定將 " + user.getNickname() + " 加入群組？",
-                            holder.itemView)
+                            tagData)
                             .show(getSupportFragmentManager(), "GroupJoin");
                 }
             });
@@ -317,7 +337,7 @@ public class GroupManageActivity extends AppCompatActivity {
                     ConfirmDialog.getInstance(JoiningMemberAdapter.this,
                             "取消加入申請",
                             "取消 " + user.getNickname() + " 加入群組申請？",
-                            holder.itemView)
+                            tagData)
                             .show(getSupportFragmentManager(), "GroupJoinCancel");
                 }
             });
@@ -329,14 +349,14 @@ public class GroupManageActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onConfirm(View view) {
-            final TagData tag = (TagData) view.getTag();
-            switch (tag.clickedViewId) {
+        public void onConfirm(Object tag) {
+            final TagData data = (TagData) tag;
+            switch (data.clickedViewId) {
                 case R.id.joining_group_member_accept:
-                    acceptJoinGroup(tag.user);
+                    acceptJoinGroup(data.user);
                     break;
                 case R.id.joining_group_member_decline:
-                    declineJoinGroup(tag.user);
+                    declineJoinGroup(data.user);
                     break;
             }
         }

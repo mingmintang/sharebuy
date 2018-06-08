@@ -45,6 +45,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     private DatabaseReference groupsRef;
     private GroupsValueEventListener groupsValueEventListener;
     private ArrayList<Group> groups = new ArrayList<>();
+    private PopupMenu popupMenu;
 
     public static GroupFragment getInstance(User user) {
         if (fragment == null) {
@@ -71,13 +72,13 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
 
     private void initViews(View view) {
         ImageButton ibMenu = view.findViewById(R.id.group_menu);
-        final PopupMenu popup = new PopupMenu(getContext(), ibMenu);
-        popup.getMenuInflater().inflate(R.menu.fragment_group_menu, popup.getMenu());
-        popup.setOnMenuItemClickListener(this);
+        popupMenu = new PopupMenu(getContext(), ibMenu);
+        popupMenu.getMenuInflater().inflate(R.menu.fragment_group_menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(this);
         ibMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                popup.show();
+                popupMenu.show();
             }
         });
 
@@ -104,9 +105,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                             getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
                         }
                     });
+                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_group, false);
                 } else {
                     ibManage.setEnabled(false);
                     ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
+                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_group, true);
                 }
             }
 

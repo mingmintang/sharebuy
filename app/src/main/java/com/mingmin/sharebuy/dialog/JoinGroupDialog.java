@@ -10,7 +10,6 @@ import android.support.v7.widget.RecyclerView;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,17 +19,12 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.R;
-import com.mingmin.sharebuy.notification.GroupNotification;
-import com.mingmin.sharebuy.notification.Notification;
 
 import java.util.ArrayList;
 
@@ -59,7 +53,7 @@ public class JoinGroupDialog extends DialogFragment {
         final AlertDialog dialog = new AlertDialog.Builder(getActivity())
                 .setView(view)
                 .create();
-        dialog.getWindow().setWindowAnimations(R.style.dialog_animation);
+        dialog.getWindow().setWindowAnimations(R.style.dialog_animation_up);
 
         initRecyclerView(view);
 

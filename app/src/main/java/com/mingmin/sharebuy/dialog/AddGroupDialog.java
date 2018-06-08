@@ -43,7 +43,7 @@ public class AddGroupDialog extends DialogFragment {
                 .setTitle("新增群組")
                 .setView(view)
                 .create();
-        dialog.getWindow().setWindowAnimations(R.style.dialog_animation);
+        dialog.getWindow().setWindowAnimations(R.style.dialog_animation_up);
 
         Button btnConfirm = view.findViewById(R.id.add_group_confirm);
         btnConfirm.setOnClickListener(new View.OnClickListener() {
