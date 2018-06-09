@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
+import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
 import com.mingmin.sharebuy.notification.GroupNotification;
 import com.mingmin.sharebuy.notification.Notification;
@@ -34,7 +35,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener, JoinGroupDialog.OnJoinGroupListener {
+public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener, JoinGroupDialog.OnJoinGroupListener, ConfirmDialog.OnConfirmListener {
     private final String TAG = getClass().getSimpleName();
     private static GroupFragment fragment;
     private User user;
@@ -46,6 +47,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     private GroupsValueEventListener groupsValueEventListener;
     private ArrayList<Group> groups = new ArrayList<>();
     private PopupMenu popupMenu;
+    private Group group;
 
     public static GroupFragment getInstance(User user) {
         if (fragment == null) {
@@ -93,7 +95,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                final Group group = groups.get(position);
+                group = groups.get(position);
                 if (group.getFounderUid().equals(user.getUid())) {
                     ibManage.setEnabled(true);
                     ibManage.setImageResource(R.drawable.ic_group_setting);
@@ -167,6 +169,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                 getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_INFO);
                 return true;
             case R.id.group_menu_exit:
+                ConfirmDialog.getInstance(this,
+                        "退出群組",
+                        "確定退出 " + group.getName() +" 群組？",
+                        group)
+                        .show(getFragmentManager(), "exit_group");
                 return true;
             default:
                 return false;
@@ -271,6 +278,31 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                                     @Override
                                     public void onSuccess(Void aVoid) {
                                         Snackbar.make(getView(), "新增群組成功", Snackbar.LENGTH_LONG).show();
+                                    }
+                                });
+                    }
+                });
+    }
+
+    @Override
+    public void onConfirm(Object tag) {
+        fdb.getReference("groups")
+                .child(group.getId())
+                .child("users")
+                .child(user.getUid())
+                .removeValue()
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        fdb.getReference("users")
+                                .child(user.getUid())
+                                .child("groups")
+                                .child(group.getId())
+                                .removeValue()
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Snackbar.make(getView(), "退出群組成功", Snackbar.LENGTH_LONG).show();
                                     }
                                 });
                     }

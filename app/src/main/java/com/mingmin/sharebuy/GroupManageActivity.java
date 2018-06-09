@@ -215,7 +215,8 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         }
     }
 
-    class JoinedMemberAdapter extends RecyclerView.Adapter implements ConfirmDialog.OnConfirmListener {
+    class JoinedMemberAdapter extends RecyclerView.Adapter<JoinedMemberAdapter.ViewHolder>
+            implements ConfirmDialog.OnConfirmListener {
         private ArrayList<User> members;
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvNickname;
@@ -232,15 +233,14 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         @NonNull
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public JoinedMemberAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View itemView = getLayoutInflater()
                     .inflate(R.layout.row_joined_group_member, parent, false);
             return new ViewHolder(itemView);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-            final ViewHolder holder = (ViewHolder) viewHolder;
+        public void onBindViewHolder(@NonNull JoinedMemberAdapter.ViewHolder holder, int position) {
             final User user = members.get(position);
             holder.tvNickname.setText(user.getNickname());
             holder.btnRemove.setOnClickListener(new View.OnClickListener() {
@@ -283,7 +283,8 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         }
     }
 
-    class JoiningMemberAdapter extends RecyclerView.Adapter implements ConfirmDialog.OnConfirmListener{
+    class JoiningMemberAdapter extends RecyclerView.Adapter<JoiningMemberAdapter.ViewHolder>
+            implements ConfirmDialog.OnConfirmListener{
         private ArrayList<User> members;
         class TagData {
             User user;
@@ -306,15 +307,14 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         @NonNull
         @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        public JoiningMemberAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View itemView = getLayoutInflater()
                     .inflate(R.layout.row_joining_group_member, parent, false);
             return new ViewHolder(itemView);
         }
 
         @Override
-        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-            final ViewHolder holder = (ViewHolder) viewHolder;
+        public void onBindViewHolder(@NonNull JoiningMemberAdapter.ViewHolder holder, int position) {
             final User user = members.get(position);
             final TagData tagData = new TagData();
             tagData.user = user;
