@@ -30,12 +30,12 @@
             android:screenOrientation="portrait" />
         <activity android:name=".EditProfileActivity" />
 
-        <service android:name=".SharebuyFirebaseInstanceIdService">
+        <service android:name=".service.SharebuyFirebaseInstanceIdService">
             <intent-filter>
                 <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
-        <service android:name=".SharebuyFirebaseMessagingService">
+        <service android:name=".service.SharebuyFirebaseMessagingService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>

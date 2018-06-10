@@ -1,10 +1,8 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.service;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
@@ -16,6 +14,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.mingmin.sharebuy.Group;
+import com.mingmin.sharebuy.MainActivity;
+import com.mingmin.sharebuy.R;
 
 import static com.mingmin.sharebuy.notification.Notification.ACTION_REQUEST_JOIN_GROUP;
 
