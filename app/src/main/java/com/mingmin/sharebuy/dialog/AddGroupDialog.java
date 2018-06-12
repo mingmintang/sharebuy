@@ -15,19 +15,12 @@ import android.widget.EditText;
 import com.mingmin.sharebuy.R;
 
 public class AddGroupDialog extends DialogFragment {
-    private static AddGroupDialog instance;
     private OnAddGroupListener listener;
 
-    private void setListener(OnAddGroupListener listener) {
-        this.listener = listener;
-    }
-
-    public static AddGroupDialog getInstance(OnAddGroupListener listener) {
-        if (instance == null) {
-            instance = new AddGroupDialog();
-        }
-        instance.setListener(listener);
-        return instance;
+    public static AddGroupDialog newInstance(OnAddGroupListener listener) {
+        AddGroupDialog fragment = new AddGroupDialog();
+        fragment.listener = listener;
+        return fragment;
     }
 
     @NonNull

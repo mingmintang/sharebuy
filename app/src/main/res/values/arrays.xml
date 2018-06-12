@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="coin_units">
+        <item>新台幣</item>
+        <item>日圓</item>
+        <item>韓元</item>
+        <item>美元</item>
+        <item>歐元</item>
+    </string-array>
+    <string-array name="order_states">
+        <item>未接單</item>
+        <item>已接單</item>
+        <item>已結單</item>
+        <item>已取消</item>
+    </string-array>
+</resources>

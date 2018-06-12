@@ -6,35 +6,33 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 
 import com.mingmin.sharebuy.R;
 
 public class ConfirmDialog extends DialogFragment {
-    private static ConfirmDialog instance;
     private OnConfirmListener listener;
     private String title;
     private String message;
     private Object tag;
     private boolean isTwice;
 
-    public static ConfirmDialog getInstance(OnConfirmListener listener,
+    public static ConfirmDialog newInstance(OnConfirmListener listener,
                                             String title, String message, Object tag) {
-        if (instance == null) {
-            instance = new ConfirmDialog();
-        }
-        instance.listener = listener;
-        instance.title = title;
-        instance.message = message;
-        instance.tag = tag;
-        instance.isTwice = false;
-        return instance;
+        ConfirmDialog fragment = new ConfirmDialog();
+        fragment.listener = listener;
+        fragment.title = title;
+        fragment.message = message;
+        fragment.tag = tag;
+        fragment.isTwice = false;
+        return fragment;
     }
 
-    public static ConfirmDialog getInstance(OnConfirmListener listener,
+    public static ConfirmDialog newInstance(OnConfirmListener listener,
                                             String title, String message, Object tag, boolean isTwice) {
-        getInstance(listener, title, message, tag);
-        instance.isTwice = isTwice;
-        return instance;
+        ConfirmDialog fragment = newInstance(listener, title, message, tag);
+        fragment.isTwice = isTwice;
+        return fragment;
     }
 
     @NonNull

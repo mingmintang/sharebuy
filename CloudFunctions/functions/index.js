@@ -58,3 +58,16 @@ function sendMessageToDevices(tokensRef, tokens, payload) {
         return res;
     });
 }
+
+exports.syncGroupOrder = functions.database.ref('/groups/{groupId}/orders/{orderId}')
+.onWrite((change, context) => {
+    const order = change.after.val();
+    const orderId = order.id;
+    const takerUid = order.takerUid;
+    let promises = [];
+    if (takerUid !== null) {
+        const syncUserOrderPromise = admin.database().ref(`/users/${takerUid}/orders/${orderId}`).set(order);
+        promises.push(syncUserOrderPromise);
+    }
+    return Promise.all(promises);
+});

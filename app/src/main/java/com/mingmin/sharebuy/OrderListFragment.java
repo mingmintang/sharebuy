@@ -69,16 +69,6 @@ public class OrderListFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
@@ -100,6 +90,9 @@ public class OrderListFragment extends Fragment {
                 .setQuery(query, Order.class)
                 .build();
         adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
+            String[] coinUnits = getResources().getStringArray(R.array.coin_units);
+            String[] orderStates = getResources().getStringArray(R.array.order_states);
+
             @NonNull
             @Override
             public OrderHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -111,9 +104,12 @@ public class OrderListFragment extends Fragment {
             @Override
             protected void onBindViewHolder(@NonNull OrderHolder holder, int position, @NonNull final Order order) {
                 holder.tvName.setText(order.getName());
+                holder.tvDesc.setText(order.getDesc());
                 holder.tvPrice.setText(String.valueOf(order.getPrice()));
-                holder.tvCount.setText(String.valueOf(order.getCount()));
+                holder.tvCount.setText(String.valueOf(order.getBuyCount()));
                 holder.calculateAmount();
+                holder.tvCoinUnit.setText(coinUnits[order.getCoinUnit()]);
+                holder.tvState.setText(orderStates[order.getState()]);
 
                 RequestOptions requestOptions = new RequestOptions()
                         .centerCrop()
@@ -124,19 +120,6 @@ public class OrderListFragment extends Fragment {
                         .load(order.getImageUrl())
                         .apply(requestOptions)
                         .into(holder.imageView);
-
-                if (order.getEndTime() != 0) {
-                    holder.btnEndOrder.setClickable(false);
-                    holder.btnEndOrder.setText("");
-                    holder.btnEndOrder.setHint("已結單");
-                }
-
-                holder.btnEndOrder.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        order.setEndTime(System.currentTimeMillis());
-                    }
-                });
             }
         };
 

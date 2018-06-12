@@ -156,11 +156,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.group_menu_join:
-                JoinGroupDialog.getInstance(GroupFragment.this)
+                JoinGroupDialog.newInstance(GroupFragment.this)
                         .show(getFragmentManager(), "JOIN_GROUP");
                 return true;
             case R.id.group_menu_add:
-                AddGroupDialog.getInstance(GroupFragment.this)
+                AddGroupDialog.newInstance(GroupFragment.this)
                         .show(getFragmentManager(), "ADD_GROUP");
                 return true;
             case R.id.group_menu_info:
@@ -169,7 +169,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                 getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_INFO);
                 return true;
             case R.id.group_menu_exit:
-                ConfirmDialog.getInstance(this,
+                ConfirmDialog.newInstance(this,
                         "退出群組",
                         "確定退出 " + group.getName() +" 群組？",
                         group)

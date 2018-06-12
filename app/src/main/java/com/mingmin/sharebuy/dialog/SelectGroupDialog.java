@@ -2,20 +2,18 @@ package com.mingmin.sharebuy.dialog;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
+import android.support.v7.recyclerview.extensions.ListAdapter;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.InputFilter;
-import android.text.Spanned;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
@@ -28,15 +26,22 @@ import com.mingmin.sharebuy.R;
 
 import java.util.ArrayList;
 
-public class JoinGroupDialog extends DialogFragment {
-
-    private OnJoinGroupListener listener;
-    private ArrayList<Group> searchedGroups = new ArrayList<>();
+public class SelectGroupDialog extends DialogFragment {
+    private String title;
+    private String uid;
+    private OnSelectGroupListener listener;
+    private Object tag;
+    private ArrayList<Group> groups = new ArrayList<>();
     private RecyclerView recyclerView;
+    private Button btnConfirm;
 
-    public static JoinGroupDialog newInstance(OnJoinGroupListener listener) {
-        JoinGroupDialog fragment = new JoinGroupDialog();
+    public static SelectGroupDialog newInstance(String title, String uid,
+                                                OnSelectGroupListener listener, Object tag) {
+        SelectGroupDialog fragment = new SelectGroupDialog();
+        fragment.title = title;
+        fragment.uid = uid;
         fragment.listener = listener;
+        fragment.tag = tag;
         return fragment;
     }
 
@@ -44,84 +49,35 @@ public class JoinGroupDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext())
-                .inflate(R.layout.dialog_join_group, null, false);
-
-        final AlertDialog dialog = new AlertDialog.Builder(getActivity())
+                .inflate(R.layout.dialog_select_group, null, false);
+        final AlertDialog dialog = new AlertDialog.Builder(getContext())
+                .setTitle(title)
                 .setView(view)
                 .create();
         dialog.getWindow().setWindowAnimations(R.style.dialog_animation_up);
 
         initRecyclerView(view);
 
-        final Button btnConfirm = view.findViewById(R.id.join_group_confirm);
+        btnConfirm = view.findViewById(R.id.select_group_confirm);
         btnConfirm.setEnabled(false);
         btnConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
-                listener.onJoinGroupConfirm(searchedGroups.get(adapter.getSelectedPosition()));
+                listener.onSelectGroupConfirm(groups.get(adapter.getSelectedPosition()), tag);
                 dialog.dismiss();
-            }
-        });
-
-        final EditText etSearchCode = view.findViewById(R.id.join_group_searchCode);
-        etSearchCode.setFilters(new InputFilter[]{new InputFilter() {
-            @Override
-            public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-                int input = Integer.parseInt(dest.toString() + source.toString());
-                if (input > 0 && input < 1000000) {
-                    return null;
-                }
-                return "";
-            }
-        }});
-
-        ImageButton ibSearch = view.findViewById(R.id.join_group_search);
-        ibSearch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (TextUtils.isEmpty(etSearchCode.getText())) {
-                    etSearchCode.setError("不能空白");
-                } else {
-                    int searchCode = Integer.parseInt(etSearchCode.getText().toString());
-                    FirebaseDatabase.getInstance()
-                            .getReference("groups")
-                            .orderByChild("searchCode")
-                            .equalTo(searchCode)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    searchedGroups.clear();
-                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        Group group = item.getValue(Group.class);
-                                        searchedGroups.add(group);
-                                    }
-                                    recyclerView.setAdapter(new GroupAdapter(searchedGroups));
-                                    if (searchedGroups.size() > 0) {
-                                        btnConfirm.setEnabled(true);
-                                    } else {
-                                        btnConfirm.setEnabled(false);
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
-                }
             }
         });
 
         return dialog;
     }
 
-    public interface OnJoinGroupListener {
-        void onJoinGroupConfirm(Group group);
+    public interface OnSelectGroupListener {
+        void onSelectGroupConfirm(Group group, Object tag);
     }
 
     private void initRecyclerView(View view) {
-        recyclerView = view.findViewById(R.id.join_group_recyclerView);
+        recyclerView = view.findViewById(R.id.select_group_recyclerView);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager llm = new LinearLayoutManager(getContext()){
             @Override
@@ -130,6 +86,47 @@ public class JoinGroupDialog extends DialogFragment {
             }
         };
         recyclerView.setLayoutManager(llm);
+
+        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+        fdb.getReference("users")
+                .child(uid)
+                .child("groups")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        final long count = dataSnapshot.getChildrenCount();
+                        groups.clear();
+                        if (count == 0) {
+                            recyclerView.setAdapter(new GroupAdapter(groups));
+                            return;
+                        }
+                        for (DataSnapshot childSnap : dataSnapshot.getChildren()) {
+                            fdb.getReference("groups")
+                                    .child(childSnap.getKey())
+                                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            Group group = dataSnapshot.getValue(Group.class);
+                                            groups.add(group);
+                                            if (groups.size() == count) {
+                                                recyclerView.setAdapter(new GroupAdapter(groups));
+                                                btnConfirm.setEnabled(true);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+
+                                        }
+                                    });
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
     }
 
     class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.ViewHolder> implements View.OnClickListener {
@@ -160,9 +157,9 @@ public class JoinGroupDialog extends DialogFragment {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View itemView = getLayoutInflater().inflate(R.layout.row_group, parent, false);
-            itemView.setOnClickListener(this);
-            return new ViewHolder(itemView);
+            View view = getLayoutInflater().inflate(R.layout.row_group, parent, false);
+            view.setOnClickListener(this);
+            return new ViewHolder(view);
         }
 
         @Override
@@ -188,7 +185,6 @@ public class JoinGroupDialog extends DialogFragment {
                     });
             holder.radioButton.setChecked(selectedPosition == position);
             holder.itemView.setTag(position);
-
         }
 
         @Override
@@ -201,6 +197,5 @@ public class JoinGroupDialog extends DialogFragment {
             selectedPosition = (int) v.getTag();
             notifyDataSetChanged();
         }
-
     }
 }

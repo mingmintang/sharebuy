@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragment.EditOrderFragment">
+
+    <!-- TODO: Update blank fragment layout -->
+
+    <android.support.constraint.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/edit_order_image"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:src="@drawable/ic_image"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/edit_order_name_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/edit_order_image">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/edit_order_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="商品名稱"
+                android:singleLine="true" />
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/edit_order_desc_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/edit_order_name_layout">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/edit_order_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="補充說明"
+                android:singleLine="true" />
+
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/edit_order_price_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/edit_order_desc_layout">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/edit_order_price"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="6"
+                android:hint="價格"
+                android:inputType="number"
+                android:selectAllOnFocus="true"
+                android:singleLine="true" />
+        </android.support.design.widget.TextInputLayout>
+
+        <Spinner
+            android:id="@+id/edit_order_coin_unit"
+            android:layout_width="140dp"
+            android:layout_height="0dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/edit_order_price_layout"
+            app:layout_constraintStart_toEndOf="@+id/edit_order_price_layout"
+            app:layout_constraintTop_toTopOf="@+id/edit_order_price_layout" />
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/edit_order_count_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/edit_order_price_layout">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/edit_order_count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="4"
+                android:hint="自買數量"
+                android:inputType="number"
+                android:selectAllOnFocus="true"
+                android:singleLine="true" />
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/edit_order_maxCount_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@+id/edit_order_count_layout"
+            app:layout_constraintTop_toTopOf="@+id/edit_order_count_layout">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/edit_order_maxCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="4"
+                android:hint="限定數量"
+                android:inputType="number"
+                android:selectAllOnFocus="true"
+                android:singleLine="true" />
+        </android.support.design.widget.TextInputLayout>
+
+        <TextView
+            android:id="@+id/edit_order_amount_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="小計"
+            android:textAppearance="@android:style/TextAppearance.Medium"
+            app:layout_constraintEnd_toStartOf="@+id/edit_order_amount"
+            app:layout_constraintTop_toTopOf="@+id/edit_order_amount" />
+
+        <TextView
+            android:id="@+id/edit_order_amount"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="24dp"
+            android:ems="6"
+            android:gravity="left"
+            android:textAppearance="@android:style/TextAppearance.Medium"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/edit_order_maxCount_layout" />
+
+    </android.support.constraint.ConstraintLayout>
+</FrameLayout>

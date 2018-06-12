@@ -2,9 +2,19 @@ package com.mingmin.sharebuy;
 
 public class Buyer {
     private String uid;
-    private long orderId;
-    private String name;
-    private int count;
+    private int orderCount;
+    private long orderTime;
+    private int buyCount;
+
+    private Buyer() {
+    }
+
+    public Buyer(String uid, int orderCount, int buyCount) {
+        this.uid = uid;
+        this.orderCount = orderCount;
+        this.buyCount = buyCount;
+        orderTime = System.currentTimeMillis();
+    }
 
     public String getUid() {
         return uid;
@@ -14,27 +24,23 @@ public class Buyer {
         this.uid = uid;
     }
 
-    public long getOrderId() {
-        return orderId;
+    public int getOrderCount() {
+        return orderCount;
     }
 
-    public void setOrderId(long orderId) {
-        this.orderId = orderId;
+    public void setOrderCount(int orderCount) {
+        this.orderCount = orderCount;
     }
 
-    public String getName() {
-        return name;
+    public long getOrderTime() {
+        return orderTime;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public long getBuyCount() {
+        return buyCount;
     }
 
-    public int getCount() {
-        return count;
-    }
-
-    public void setCount(int count) {
-        this.count = count;
+    public void setBuyCount(int buyCount) {
+        this.buyCount = buyCount;
     }
 }

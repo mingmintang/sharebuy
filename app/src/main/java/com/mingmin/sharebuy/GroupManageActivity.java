@@ -92,7 +92,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         int id = item.getItemId();
         if (id == R.id.group_manage_menu_delete) {
             String tag = "group_delete";
-            ConfirmDialog.getInstance(this,
+            ConfirmDialog.newInstance(this,
                     "刪除群組(危險操作)",
                     "這將會刪除 " + group.getName() + " 群組，退出所有成員，刪除所有未接單內容",
                     tag,
@@ -246,7 +246,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
             holder.btnRemove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    ConfirmDialog.getInstance(JoinedMemberAdapter.this,
+                    ConfirmDialog.newInstance(JoinedMemberAdapter.this,
                             "退出群組",
                             "確定將 " + user.getNickname() + " 退出群組？",
                             user)
@@ -323,7 +323,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                 @Override
                 public void onClick(View v) {
                     tagData.clickedViewId = v.getId();
-                    ConfirmDialog.getInstance(JoiningMemberAdapter.this,
+                    ConfirmDialog.newInstance(JoiningMemberAdapter.this,
                             "加入群組",
                             "確定將 " + user.getNickname() + " 加入群組？",
                             tagData)
@@ -334,7 +334,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                 @Override
                 public void onClick(View v) {
                     tagData.clickedViewId = v.getId();
-                    ConfirmDialog.getInstance(JoiningMemberAdapter.this,
+                    ConfirmDialog.newInstance(JoiningMemberAdapter.this,
                             "取消加入申請",
                             "取消 " + user.getNickname() + " 加入群組申請？",
                             tagData)
