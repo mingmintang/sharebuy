@@ -4,7 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
+import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.InputFilter;
@@ -28,7 +28,7 @@ import com.mingmin.sharebuy.R;
 
 import java.util.ArrayList;
 
-public class JoinGroupDialog extends DialogFragment {
+public class JoinGroupDialog extends AppCompatDialogFragment {
 
     private OnJoinGroupListener listener;
     private ArrayList<Group> searchedGroups = new ArrayList<>();

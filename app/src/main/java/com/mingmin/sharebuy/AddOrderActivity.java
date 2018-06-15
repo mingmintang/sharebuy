@@ -182,7 +182,7 @@ public class AddOrderActivity extends AppCompatActivity implements
         final Order order = editOrderFragment.getOrder();
         order.setCreatorUid(uid);
         order.setGroupId(group.getId());
-        order.setState(Order.STATE_CRATE);
+        order.setState(Order.STATE_CREATE);
 
         String imagePath = order.getImagePath();
         String fileName = imagePath.substring(imagePath.lastIndexOf("/"));

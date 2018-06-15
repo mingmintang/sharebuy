@@ -4,8 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -18,11 +21,16 @@ import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
@@ -37,10 +45,8 @@ import java.util.HashMap;
 
 public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener, PopupMenu.OnMenuItemClickListener, JoinGroupDialog.OnJoinGroupListener, ConfirmDialog.OnConfirmListener {
     private final String TAG = getClass().getSimpleName();
-    private static GroupFragment fragment;
     private User user;
     private OnFragmentInteractionListener mListener;
-    private SpinnerAdapter adapter;
     private Spinner spinner;
     private FirebaseDatabase fdb;
     private DatabaseReference groupsRef;
@@ -48,19 +54,21 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     private ArrayList<Group> groups = new ArrayList<>();
     private PopupMenu popupMenu;
     private Group group;
+    private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> recyclerAdapter;
+    private RecyclerView recyclerView;
 
-    public static GroupFragment getInstance(User user) {
-        if (fragment == null) {
-            fragment = new GroupFragment();
-        }
-        fragment.user = user;
-
+    public static GroupFragment newInstance(User user) {
+        Bundle args = new Bundle();
+        args.putSerializable("user", user);
+        GroupFragment fragment = new GroupFragment();
+        fragment.setArguments(args);
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        user = (User) getArguments().getSerializable("user");
         fdb = FirebaseDatabase.getInstance();
     }
 
@@ -73,6 +81,10 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     private void initViews(View view) {
+        recyclerView = view.findViewById(R.id.group_recyclerView);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
         ImageButton ibMenu = view.findViewById(R.id.group_menu);
         popupMenu = new PopupMenu(getContext(), ibMenu);
         popupMenu.getMenuInflater().inflate(R.menu.fragment_group_menu, popupMenu.getMenu());
@@ -96,6 +108,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 group = groups.get(position);
+                setupRecyclerView(group);
                 if (group.getFounderUid().equals(user.getUid())) {
                     ibManage.setEnabled(true);
                     ibManage.setImageResource(R.drawable.ic_group_setting);
@@ -153,6 +166,22 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        if (recyclerAdapter != null) {
+            recyclerAdapter.startListening();
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (recyclerAdapter != null) {
+            recyclerAdapter.stopListening();
+        }
+    }
+
+    @Override
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.group_menu_join:
@@ -180,16 +209,6 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
         }
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
@@ -221,7 +240,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                                                 return (int) (o2.getCreatedTime() - o1.getCreatedTime());
                                             }
                                         });
-                                        adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
+                                        SpinnerAdapter adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
                                         spinner.setAdapter(adapter);
                                     }
                                 }
@@ -307,5 +326,17 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                                 });
                     }
                 });
+    }
+
+    private void setupRecyclerView(Group group) {
+        Query query = fdb.getReference("groups")
+                .child(group.getId())
+                .child("orders")
+                .orderByChild("nCreateTime")
+                .limitToFirst(30);
+
+        recyclerAdapter = new OrderRecyclerAdapter(getContext(), query, user);
+        recyclerView.setAdapter(recyclerAdapter);
+        recyclerAdapter.startListening();
     }
 }

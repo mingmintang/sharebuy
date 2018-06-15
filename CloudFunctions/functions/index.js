@@ -9,6 +9,7 @@ exports.syncNickname = functions.database.ref('/users/{uid}/data/nickname').onUp
     return Promise.all([groupsPromise]).then(results => {
         results[0].forEach(childSnap => {
             const groupId = childSnap.ref.key;
+            // if (founderUid == uid)
             admin.database().ref(`/groups/${groupId}/founderNickname`).set(nickname);
         });
         return;

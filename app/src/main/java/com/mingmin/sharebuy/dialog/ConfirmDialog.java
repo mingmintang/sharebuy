@@ -5,12 +5,11 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatDialogFragment;
 
 import com.mingmin.sharebuy.R;
 
-public class ConfirmDialog extends DialogFragment {
+public class ConfirmDialog extends AppCompatDialogFragment {
     private OnConfirmListener listener;
     private String title;
     private String message;

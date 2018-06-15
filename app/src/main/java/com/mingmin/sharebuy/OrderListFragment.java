@@ -19,22 +19,22 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 
 public class OrderListFragment extends Fragment {
-    private static OrderListFragment fragment;
     private User user;
-    private FirebaseRecyclerAdapter<Order, OrderHolder> adapter;
+    private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> adapter;
     private OnFragmentInteractionListener mListener;
 
-    public static OrderListFragment getInstance(User user) {
-        if (fragment == null) {
-            fragment = new OrderListFragment();
-        }
-        fragment.user = user;
+    public static OrderListFragment newInstance(User user) {
+        Bundle args = new Bundle();
+        args.putSerializable("user", user);
+        OrderListFragment fragment = new OrderListFragment();
+        fragment.setArguments(args);
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        user = (User) getArguments().getSerializable("user");
     }
 
     @Override
@@ -69,64 +69,6 @@ public class OrderListFragment extends Fragment {
         mListener = null;
     }
 
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
-    }
-
-    private void setupRecyclerView(View view) {
-        RecyclerView recyclerView = view.findViewById(R.id.order_list_recyclerView);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-
-        Query query = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(user.getUid())
-                .child("orders")
-                .orderByChild("nStartTime")
-                .limitToFirst(30);
-
-        final FirebaseRecyclerOptions<Order> options = new FirebaseRecyclerOptions.Builder<Order>()
-                .setQuery(query, Order.class)
-                .build();
-        adapter = new FirebaseRecyclerAdapter<Order, OrderHolder>(options) {
-            String[] coinUnits = getResources().getStringArray(R.array.coin_units);
-            String[] orderStates = getResources().getStringArray(R.array.order_states);
-
-            @NonNull
-            @Override
-            public OrderHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                View view = LayoutInflater.from(getContext())
-                        .inflate(R.layout.row_order, parent, false);
-                return new OrderHolder(view);
-            }
-
-            @Override
-            protected void onBindViewHolder(@NonNull OrderHolder holder, int position, @NonNull final Order order) {
-                holder.tvName.setText(order.getName());
-                holder.tvDesc.setText(order.getDesc());
-                holder.tvPrice.setText(String.valueOf(order.getPrice()));
-                holder.tvCount.setText(String.valueOf(order.getBuyCount()));
-                holder.calculateAmount();
-                holder.tvCoinUnit.setText(coinUnits[order.getCoinUnit()]);
-                holder.tvState.setText(orderStates[order.getState()]);
-
-                RequestOptions requestOptions = new RequestOptions()
-                        .centerCrop()
-                        .override(300, 300)
-                        .placeholder(R.drawable.ic_downloading)
-                        .error(R.drawable.ic_alert);
-                Glide.with(OrderListFragment.this)
-                        .load(order.getImageUrl())
-                        .apply(requestOptions)
-                        .into(holder.imageView);
-            }
-        };
-
-        recyclerView.setAdapter(adapter);
-        adapter.startListening();
-    }
-
     @Override
     public void onStart() {
         super.onStart();
@@ -143,4 +85,25 @@ public class OrderListFragment extends Fragment {
         }
     }
 
+    public interface OnFragmentInteractionListener {
+        // TODO: Update argument type and name
+        void onFragmentInteraction(Uri uri);
+    }
+
+    private void setupRecyclerView(View view) {
+        RecyclerView recyclerView = view.findViewById(R.id.order_list_recyclerView);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        Query query = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(user.getUid())
+                .child("orders")
+                .orderByChild("nCreateTime")
+                .limitToFirst(30);
+
+        adapter = new OrderRecyclerAdapter(getContext(), query, user);
+        recyclerView.setAdapter(adapter);
+        adapter.startListening();
+    }
 }

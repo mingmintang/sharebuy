@@ -50,7 +50,7 @@ public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
                         Intent intent = new Intent(SharebuyFirebaseMessagingService.this, MainActivity.class);
                         intent.putExtra("goToGroupManage", true);
                         intent.putExtra("group", group);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         PendingIntent pendingIntent = PendingIntent.getActivity(SharebuyFirebaseMessagingService.this,
                                 ACTION_REQUEST_JOIN_GROUP,
                                 intent,

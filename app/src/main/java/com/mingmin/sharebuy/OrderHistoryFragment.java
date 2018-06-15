@@ -11,22 +11,22 @@ import android.view.ViewGroup;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class OrderHistoryFragment extends Fragment {
-    private static OrderHistoryFragment fragment;
     private User user;
     private FirebaseDatabase fdb;
     private OnFragmentInteractionListener mListener;
 
-    public static OrderHistoryFragment getInstance(User user) {
-        if (fragment == null) {
-            fragment = new OrderHistoryFragment();
-        }
-        fragment.user = user;
+    public static OrderHistoryFragment newInstance(User user) {
+        Bundle args = new Bundle();
+        args.putSerializable("user", user);
+        OrderHistoryFragment fragment = new OrderHistoryFragment();
+        fragment.setArguments(args);
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        user = (User) getArguments().getSerializable("user");
         fdb = FirebaseDatabase.getInstance();
     }
 

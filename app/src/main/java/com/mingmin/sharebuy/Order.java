@@ -2,20 +2,22 @@ package com.mingmin.sharebuy;
 
 import android.util.Log;
 
+import com.google.firebase.database.Exclude;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Order has 4 states: create -> take -> end
  *                       ∟--------∟----> cancel
- * create: At least there is imagePath. creatorUid and startTime are created when state is built.
+ * create: At least there is imagePath. creatorUid and createTime are created when state is built.
  * take: A user took the order. A takerUid is created when state is built.
- * end: At least there are a buyer, takerUid and startTime. endTime is created when state is built.
+ * end: At least there are a buyer, takerUid and createTime. endTime is created when state is built.
  * cancel: Cancel the order, the order could not update again.
  *         Only creator or taker can cancel the order.
  */
 public class Order {
-    public static final int STATE_CRATE = 0;
+    public static final int STATE_CREATE = 0;
     public static final int STATE_TAKE = 1;
     public static final int STATE_END = 2;
     public static final int STATE_CANCEL =3;
@@ -32,9 +34,9 @@ public class Order {
     private int price;
     private int coinUnit; // index of coin_units string array
     private int maxBuyCount;
-    private long startTime;
+    private long createTime;
     private long endTime;
-    private long nStartTime; // Negative version for firebase desc sorting
+    private long nCreateTime; // Negative version for firebase desc sorting
     private long nEndTime; // Negative version for firebase desc sorting
     private Map<String, Buyer> buyers; // key: buyer uid, value: buyer object
 
@@ -43,7 +45,7 @@ public class Order {
 
     public Order(String imagePath) {
         this.imagePath = imagePath;
-        setStartTime();
+        setCreateTime();
         buyers = new HashMap<>();
     }
 
@@ -135,6 +137,7 @@ public class Order {
         this.coinUnit = coinUnit;
     }
 
+    @Exclude
     public int getBuyCount() {
         int count = 0;
         if (buyers != null && !buyers.isEmpty()) {
@@ -153,13 +156,13 @@ public class Order {
         this.maxBuyCount = maxBuyCount;
     }
 
-    public long getStartTime() {
-        return startTime;
+    public long getCreateTime() {
+        return createTime;
     }
 
-    private void setStartTime() {
-        startTime = System.currentTimeMillis();
-        nStartTime = -startTime;
+    private void setCreateTime() {
+        createTime = System.currentTimeMillis();
+        nCreateTime = -createTime;
     }
 
     public long getEndTime() {
@@ -172,7 +175,7 @@ public class Order {
     }
 
     public long getnStartTime() {
-        return nStartTime;
+        return nCreateTime;
     }
 
     public long getnEndTime() {
