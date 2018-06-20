@@ -14,10 +14,10 @@ import android.widget.Button;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.mingmin.sharebuy.cloud.Fdb;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.SelectGroupDialog;
 import com.mingmin.sharebuy.fragment.EditOrderFragment;
@@ -195,10 +195,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                         String imageUrl = taskSnapshot.getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
-                        FirebaseDatabase fdb = FirebaseDatabase.getInstance();
-                        DatabaseReference orderRef = fdb.getReference("groups")
-                                .child(order.getGroupId())
-                                .child("orders");
+                        DatabaseReference orderRef = Fdb.getGroupOrdersRef(order.getGroupId());
                         String orderId = orderRef.push().getKey();
                         order.setId(orderId);
                         orderRef.child(orderId).setValue(order)
@@ -231,10 +228,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                         String imageUrl = taskSnapshot.getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
-                        FirebaseDatabase fdb = FirebaseDatabase.getInstance();
-                        DatabaseReference orderRef = fdb.getReference("groups")
-                                .child(order.getGroupId())
-                                .child("orders");
+                        DatabaseReference orderRef = Fdb.getGroupOrdersRef(order.getGroupId());
                         String orderId = orderRef.push().getKey();
                         order.setId(orderId);
                         orderRef.child(orderId).setValue(order)
@@ -267,10 +261,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                         String imageUrl = taskSnapshot.getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
-                        FirebaseDatabase fdb = FirebaseDatabase.getInstance();
-                        DatabaseReference orderRef = fdb.getReference("users")
-                                .child(order.getTakerUid())
-                                .child("orders");
+                        DatabaseReference orderRef = Fdb.getUserOrdersRef(order.getTakerUid());
                         String orderId = orderRef.push().getKey();
                         order.setId(orderId);
                         orderRef.child(orderId).setValue(order)

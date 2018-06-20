@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,10 +22,10 @@ import android.widget.TextView;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.cloud.Fdb;
 
 import java.util.ArrayList;
 
@@ -84,16 +85,14 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
                     etSearchCode.setError("不能空白");
                 } else {
                     int searchCode = Integer.parseInt(etSearchCode.getText().toString());
-                    FirebaseDatabase.getInstance()
-                            .getReference("groups")
-                            .orderByChild("searchCode")
+                    Fdb.getGroupsRef().orderByChild("group/searchCode")
                             .equalTo(searchCode)
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
                                     searchedGroups.clear();
                                     for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        Group group = item.getValue(Group.class);
+                                        Group group = item.child("group").getValue(Group.class);
                                         searchedGroups.add(group);
                                     }
                                     recyclerView.setAdapter(new GroupAdapter(searchedGroups));
@@ -169,11 +168,7 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(group.getFounderUid())
-                    .child("data")
-                    .child("nickname")
+            Fdb.getNicknameRef(group.getFounderUid())
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {

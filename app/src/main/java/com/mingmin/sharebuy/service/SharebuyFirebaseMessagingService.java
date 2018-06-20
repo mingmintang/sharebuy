@@ -17,6 +17,7 @@ import com.google.firebase.messaging.RemoteMessage;
 import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.MainActivity;
 import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.cloud.Fdb;
 
 import static com.mingmin.sharebuy.notification.Notification.ACTION_REQUEST_JOIN_GROUP;
 
@@ -29,8 +30,6 @@ public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
         int action = Integer.parseInt(remoteMessage.getData().get("action"));
         String groupId = remoteMessage.getData().get("groupId");
 
-        Log.d("wwwww", "onMessageReceived: " + groupId + "/" + action);
-
         switch (action) {
             case ACTION_REQUEST_JOIN_GROUP:
                 requestJoinGroupNotification(action, groupId);
@@ -39,10 +38,7 @@ public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private void requestJoinGroupNotification(int action, String groupId) {
-        FirebaseDatabase.getInstance()
-                .getReference("groups")
-                .child(groupId)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
+        Fdb.getGroupRef(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         Group group = dataSnapshot.getValue(Group.class);

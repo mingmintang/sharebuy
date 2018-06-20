@@ -25,8 +25,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mingmin.sharebuy.cloud.Fdb;
 import com.mingmin.sharebuy.service.SharebuyFirebaseInstanceIdService;
 
 import java.util.Arrays;
@@ -196,20 +196,16 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     private void initAfterSignIn() {
+        user = new User(fuser.getUid());
         updateNickname();
         tvAccount.setText(fuser.getEmail());
-        user = new User(fuser.getUid(), tvNickname.getText().toString());
         if (!goToGroupManage() && !backToNavItemByFlag()) {
             goToNavItemHome();
         }
     }
 
     private void updateNickname() {
-        final DatabaseReference ref = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(fuser.getUid())
-                .child("data")
-                .child("nickname");
+        final DatabaseReference ref = Fdb.getNicknameRef(fuser.getUid());
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -221,6 +217,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     String tempName = fuser.getEmail().split("@")[0];
                     ref.setValue(tempName);
                     tvNickname.setText(tempName);
+                    user.setNickname(tempName);
                 }
             }
             @Override
@@ -270,13 +267,15 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 if (resultCode == RESULT_OK) {
                     initAfterSignIn();
                     Intent intent = new Intent(this, EditProfileActivity.class);
+                    intent.putExtra("user", user);
+                    intent.putExtra("email", fuser.getEmail());
                     startActivityForResult(intent, RC_EDIT_PROFILE);
                 }
                 break;
             case RC_EDIT_PROFILE:
                 if (resultCode == RESULT_OK) {
                     updateNickname();
-                    Snackbar.make(tvNickname, "修改成功", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(navigationView, "修改成功", Snackbar.LENGTH_LONG).show();
                 }
                 break;
             case RC_GROUP_MANAGE:

@@ -17,6 +17,7 @@ import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.mingmin.sharebuy.cloud.Fdb;
 
 public class OrderListFragment extends Fragment {
     private User user;
@@ -95,10 +96,7 @@ public class OrderListFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        Query query = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(user.getUid())
-                .child("orders")
+        Query query = Fdb.getUserOrdersRef(user.getUid())
                 .orderByChild("nCreateTime")
                 .limitToFirst(30);
 

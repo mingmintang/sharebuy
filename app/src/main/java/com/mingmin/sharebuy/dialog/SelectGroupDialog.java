@@ -2,12 +2,9 @@ package com.mingmin.sharebuy.dialog;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatDialogFragment;
-import android.support.v7.recyclerview.extensions.ListAdapter;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -19,10 +16,10 @@ import android.widget.TextView;
 
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.cloud.Fdb;
 
 import java.util.ArrayList;
 
@@ -87,11 +84,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         };
         recyclerView.setLayoutManager(llm);
 
-        final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
-        fdb.getReference("users")
-                .child(uid)
-                .child("groups")
-                .addListenerForSingleValueEvent(new ValueEventListener() {
+        Fdb.getUserGroupsRef(uid).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         final long count = dataSnapshot.getChildrenCount();
@@ -101,8 +94,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
                             return;
                         }
                         for (DataSnapshot childSnap : dataSnapshot.getChildren()) {
-                            fdb.getReference("groups")
-                                    .child(childSnap.getKey())
+                            Fdb.getGroupRef(childSnap.getKey())
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(DataSnapshot dataSnapshot) {
@@ -166,11 +158,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(group.getFounderUid())
-                    .child("data")
-                    .child("nickname")
+            Fdb.getNicknameRef(group.getFounderUid())
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {

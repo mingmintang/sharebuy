@@ -2,25 +2,39 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-exports.syncNickname = functions.database.ref('/users/{uid}/data/nickname').onUpdate((change, context) => {
+exports.syncNickname = functions.database.ref('/users/{uid}/userInfo/nickname').onUpdate((change, context) => {
     const uid = context.params.uid;
     const nickname = change.after.val();
     const groupsPromise = admin.database().ref(`/users/${uid}/groups`).once('value');
     return Promise.all([groupsPromise]).then(results => {
         results[0].forEach(childSnap => {
             const groupId = childSnap.ref.key;
-            // if (founderUid == uid)
-            admin.database().ref(`/groups/${groupId}/founderNickname`).set(nickname);
+            handleNickname(uid, nickname, groupId);
         });
         return;
     });
 });
 
+function handleNickname(uid, nickname, groupId) {
+    const founderUidPromise = admin.database().ref(`/groups/${groupId}/group/founderUid`).once('value');
+    return Promise.all([founderUidPromise]).then(results => {
+        const founderUid = results[0].val();
+        if (uid === founderUid) {
+            return admin.database().ref(`/groups/${groupId}/group/founderNickname`).set(nickname);
+        } else {
+            return admin.database().ref(`/groups/${groupId}/members/${uid}/nickname`).set(nickname);
+        }
+    });
+}
+
 exports.requestJoinGroup = functions.database.ref('/groups/{groupId}/notify/requestJoinGroup/{id}')
 .onCreate((snapshot, context) => {
     const noti = snapshot.val();
-    const joinGroupPromise = admin.database().ref(`/groups/${noti.groupId}/users/${noti.fromUid}`).set(false);
-    return Promise.all([joinGroupPromise]).then(results => {
+    const nicknamePromise = admin.database().ref(`/users/${noti.fromUid}/userInfo/nickname`).once('value');
+    return Promise.all([nicknamePromise]).then(results => {
+        const nickname = results[0].val();
+        admin.database().ref(`/groups/${noti.groupId}/members/${noti.fromUid}/nickname`).set(nickname);
+        admin.database().ref(`/groups/${noti.groupId}/members/${noti.fromUid}/isJoined`).set(false);
         return handleNotification(snapshot);
     });
 });

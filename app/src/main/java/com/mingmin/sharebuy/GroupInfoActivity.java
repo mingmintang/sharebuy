@@ -12,15 +12,13 @@ import android.widget.TextView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mingmin.sharebuy.cloud.Fdb;
 
 import java.util.ArrayList;
 
 public class GroupInfoActivity extends AppCompatActivity {
 
-    private Group group;
-    private FirebaseDatabase fdb;
     private DatabaseReference membersRef;
     private ValueEventListener membersValueEventListener;
 
@@ -29,16 +27,13 @@ public class GroupInfoActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_info);
 
-        group = (Group) getIntent().getSerializableExtra("group");
-        fdb = FirebaseDatabase.getInstance();
-        membersRef = fdb.getReference("groups")
-                .child(group.getId())
-                .child("users");
+        Group group = (Group) getIntent().getSerializableExtra("group");
+        membersRef = Fdb.getGroupMembersRef(group.getId());
 
         TextView tvSearchCode = findViewById(R.id.group_info_searchCode);
         tvSearchCode.setText(String.valueOf(group.getSearchCode()));
 
-        final RecyclerView recyclerView = findViewById(R.id.group_info_recyclerView);
+        RecyclerView recyclerView = findViewById(R.id.group_info_recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         setupRecyclerView(recyclerView);
@@ -48,31 +43,18 @@ public class GroupInfoActivity extends AppCompatActivity {
         membersValueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                final ArrayList<String> members = new ArrayList<>();
+                final ArrayList<Member> members = new ArrayList<>();
                 final long childCount = dataSnapshot.getChildrenCount();
                 if (childCount == 0) {
                     recyclerView.setAdapter(new MembersAdapter(members));
                     return;
                 }
                 for (DataSnapshot childSnap : dataSnapshot.getChildren()) {
-                    fdb.getReference("users")
-                            .child(childSnap.getKey())
-                            .child("data")
-                            .child("nickname")
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    String nickname = (String) dataSnapshot.getValue();
-                                    members.add(nickname);
-                                    if (members.size() == childCount) {
-                                        recyclerView.setAdapter(new MembersAdapter(members));
-                                    }
-                                }
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
+                    Member member = dataSnapshot.getValue(Member.class);
+                    members.add(member);
+                    if (members.size() == childCount) {
+                        recyclerView.setAdapter(new MembersAdapter(members));
+                    }
                 }
             }
 
@@ -86,7 +68,7 @@ public class GroupInfoActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        membersRef.orderByValue().equalTo(true)
+        membersRef.orderByChild("isJoined").equalTo(true)
                 .addValueEventListener(membersValueEventListener);
     }
 
@@ -103,7 +85,7 @@ public class GroupInfoActivity extends AppCompatActivity {
     }
 
     class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.ViewHolder> {
-        private ArrayList<String> members;
+        private ArrayList<Member> members;
 
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvNickname;
@@ -113,7 +95,7 @@ public class GroupInfoActivity extends AppCompatActivity {
             }
         }
 
-        MembersAdapter(ArrayList<String> members) {
+        MembersAdapter(ArrayList<Member> members) {
             this.members = members;
         }
 
@@ -126,7 +108,7 @@ public class GroupInfoActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            holder.tvNickname.setText(members.get(position));
+            holder.tvNickname.setText(members.get(position).getNickname());
         }
 
         @Override

@@ -7,7 +7,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,8 +18,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.mingmin.sharebuy.cloud.Fdb;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 
 import java.util.ArrayList;
@@ -31,8 +30,9 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
     private ValueEventListener joinedValueEventListener;
     private ValueEventListener joiningValueEventListener;
     private RecyclerView recyclerView;
-    private FirebaseDatabase fdb;
     private Group group;
+    private int selectedItemId;
+    private BottomNavigationView navigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,39 +40,36 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         setContentView(R.layout.activity_group_manage);
 
         group = (Group) getIntent().getSerializableExtra("group");
-        int selectedItemId = getIntent().getIntExtra("selectedItemId", R.id.group_manage_nav_joined);
-
-        fdb = FirebaseDatabase.getInstance();
-        membersRef = fdb.getReference("groups")
-                .child(group.getId())
-                .child("users");
+        selectedItemId = getIntent().getIntExtra("selectedItemId", R.id.group_manage_nav_joined);
+        membersRef = Fdb.getGroupMembersRef(group.getId());
 
         recyclerView = findViewById(R.id.group_manage_recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        BottomNavigationView navigationView = findViewById(R.id.group_manage_navigationView);
+        initValueEventListener();
+
+        navigationView = findViewById(R.id.group_manage_navigationView);
         navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                switch (item.getItemId()) {
-                    case R.id.group_manage_nav_joined:
-                        setupJoinedRecyclerView();
-                        return true;
-                    case R.id.group_manage_nav_joining:
-                        setupJoiningRecyclerView();
-                        return true;
-                }
-                return false;
+                addValueEventListener(item.getItemId());
+                return true;
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
         navigationView.setSelectedItemId(selectedItemId);
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onStop() {
+        super.onStop();
         removeAllValueEventListener();
+        selectedItemId = navigationView.getSelectedItemId();
     }
 
     @Override
@@ -118,38 +115,27 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
     }
 
-    private void setupJoinedRecyclerView() {
-        removeAllValueEventListener();
+    private void initValueEventListener() {
         joinedValueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                final long dataCount = dataSnapshot.getChildrenCount();
-                final ArrayList<User> members = new ArrayList<>();
+                long dataCount = dataSnapshot.getChildrenCount();
+                ArrayList<User> members = new ArrayList<>();
                 if (dataCount == 0) {
                     recyclerView.setAdapter(new JoinedMemberAdapter(members));
                     return;
                 }
                 for (DataSnapshot snap : dataSnapshot.getChildren()) {
-                    final String memberUid = snap.getKey();
-                    fdb.getReference("users")
-                            .child(memberUid)
-                            .child("data")
-                            .child("nickname")
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    String nickname = (String) dataSnapshot.getValue();
-                                    members.add(new User(memberUid, nickname));
-                                    if (members.size() == dataCount) {
-                                        recyclerView.setAdapter(new JoinedMemberAdapter(members));
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
+                    String memberUid = snap.getKey();
+                    Member member = snap.getValue(Member.class);
+                    if (member != null) {
+                        members.add(new User(memberUid, member.getNickname()));
+                    } else {
+                        dataCount -= 1;
+                    }
+                    if (members.size() == dataCount) {
+                        recyclerView.setAdapter(new JoinedMemberAdapter(members));
+                    }
                 }
             }
 
@@ -158,42 +144,27 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
             }
         };
-        membersRef.orderByValue().equalTo(true)
-                .addValueEventListener(joinedValueEventListener);
-    }
 
-    private void setupJoiningRecyclerView() {
-        removeAllValueEventListener();
         joiningValueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                final long dataCount = dataSnapshot.getChildrenCount();
-                final ArrayList<User> members = new ArrayList<>();
+                long dataCount = dataSnapshot.getChildrenCount();
+                ArrayList<User> members = new ArrayList<>();
                 if (dataCount == 0) {
-                    recyclerView.setAdapter(new JoinedMemberAdapter(members));
+                    recyclerView.setAdapter(new JoiningMemberAdapter(members));
                     return;
                 }
                 for (DataSnapshot snap : dataSnapshot.getChildren()) {
-                    final String memberUid = snap.getKey();
-                    fdb.getReference("users")
-                            .child(memberUid)
-                            .child("data")
-                            .child("nickname")
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    String nickname = (String) dataSnapshot.getValue();
-                                    members.add(new User(memberUid, nickname));
-                                    if (members.size() == dataCount) {
-                                        recyclerView.setAdapter(new JoiningMemberAdapter(members));
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
+                    String memberUid = snap.getKey();
+                    Member member = snap.getValue(Member.class);
+                    if (member != null) {
+                        members.add(new User(memberUid, member.getNickname()));
+                    } else {
+                        dataCount -= 1;
+                    }
+                    if (members.size() == dataCount) {
+                        recyclerView.setAdapter(new JoiningMemberAdapter(members));
+                    }
                 }
             }
 
@@ -202,8 +173,20 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
             }
         };
-        membersRef.orderByValue().equalTo(false)
-                .addValueEventListener(joiningValueEventListener);
+    }
+
+    private void addValueEventListener(int navItemId) {
+        removeAllValueEventListener();
+        switch (navItemId) {
+            case R.id.group_manage_nav_joined:
+                membersRef.orderByChild("isJoined").equalTo(true)
+                        .addValueEventListener(joinedValueEventListener);
+                break;
+            case R.id.group_manage_nav_joining:
+                membersRef.orderByChild("isJoined").equalTo(false)
+                        .addValueEventListener(joiningValueEventListener);
+                break;
+        }
     }
 
     private void removeAllValueEventListener() {
@@ -267,10 +250,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            fdb.getReference("/users")
-                                    .child(user.getUid())
-                                    .child("groups")
-                                    .child(group.getId())
+                            Fdb.getUserGroupRef(user.getUid(), group.getId())
                                     .removeValue()
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
@@ -362,14 +342,11 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         }
 
         private void acceptJoinGroup(final User user) {
-            membersRef.child(user.getUid()).setValue(true)
+            membersRef.child(user.getUid()).child("isJoined").setValue(true)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            fdb.getReference("/users")
-                                    .child(user.getUid())
-                                    .child("groups")
-                                    .child(group.getId())
+                            Fdb.getUserGroupRef(user.getUid(), group.getId())
                                     .setValue(true)
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override

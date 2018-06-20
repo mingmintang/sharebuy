@@ -9,10 +9,12 @@
     <item
         android:id="@+id/group_menu_add"
         android:title="新增群組" />
-    <item
-        android:id="@+id/group_menu_info"
-        android:title="群組資訊" />
-    <group android:id="@+id/group_menu_group">
+    <group android:id="@+id/group_menu_infoGroup">
+        <item
+            android:id="@+id/group_menu_info"
+            android:title="群組資訊" />
+    </group>
+    <group android:id="@+id/group_menu_exitGroup">
         <item
             android:id="@+id/group_menu_exit"
             android:title="退出群組" />

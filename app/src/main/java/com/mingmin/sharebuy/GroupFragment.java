@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,17 +20,14 @@ import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
-import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.mingmin.sharebuy.cloud.Fdb;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
@@ -48,7 +44,6 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     private User user;
     private OnFragmentInteractionListener mListener;
     private Spinner spinner;
-    private FirebaseDatabase fdb;
     private DatabaseReference groupsRef;
     private GroupsValueEventListener groupsValueEventListener;
     private ArrayList<Group> groups = new ArrayList<>();
@@ -69,7 +64,6 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         user = (User) getArguments().getSerializable("user");
-        fdb = FirebaseDatabase.getInstance();
     }
 
     @Override
@@ -100,9 +94,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
 
         spinner = view.findViewById(R.id.group_spinner);
         groupsValueEventListener = new GroupsValueEventListener();
-        groupsRef = fdb.getReference("users")
-                .child(user.getUid())
-                .child("groups");
+        groupsRef = Fdb.getUserGroupsRef(user.getUid());
         groupsRef.addValueEventListener(groupsValueEventListener);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -120,11 +112,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                             getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
                         }
                     });
-                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_group, false);
+                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
                 } else {
                     ibManage.setEnabled(false);
                     ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
-                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_group, true);
+                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
                 }
             }
 
@@ -201,7 +193,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                 ConfirmDialog.newInstance(this,
                         "退出群組",
                         "確定退出 " + group.getName() +" 群組？",
-                        group)
+                        "exit_group")
                         .show(getFragmentManager(), "exit_group");
                 return true;
             default:
@@ -227,7 +219,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
             if (groupIds != null && !groupIds.isEmpty()) {
                 groups.clear();
                 for (String groupId : groupIds.keySet()) {
-                    fdb.getReference("groups").child(groupId)
+                    Fdb.getGroupRef(groupId)
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
@@ -242,6 +234,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                                         });
                                         SpinnerAdapter adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
                                         spinner.setAdapter(adapter);
+                                        popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, true);
+                                        popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
                                     }
                                 }
 
@@ -251,6 +245,9 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                                 }
                             });
                 }
+            } else {
+                popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, false);
+                popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
             }
         }
 
@@ -268,30 +265,23 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
                 Notification.ACTION_REQUEST_JOIN_GROUP,
                 group.getId());
 
-        fdb.getReference("groups")
-                .child(group.getId())
-                .child("notify")
-                .child("requestJoinGroup")
+        Fdb.getRequestJoinGroupRef(group.getId())
                 .push()
                 .setValue(notification);
     }
 
     @Override
     public void onAddGroupConfirm(String groupName) {
-        String groupId = fdb.getReference("groups")
+        String groupId = Fdb.getGroupsRef()
                 .push()
                 .getKey();
         final Group group = new Group(groupId, groupName, user.getUid(), user.getNickname());
-        fdb.getReference("groups")
-                .child(group.getId())
+        Fdb.getGroupRef(group.getId())
                 .setValue(group)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        fdb.getReference("users")
-                                .child(group.getFounderUid())
-                                .child("groups")
-                                .child(group.getId())
+                        Fdb.getUserGroupRef(group.getFounderUid(), group.getId())
                                 .setValue(true)
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
@@ -305,18 +295,21 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
 
     @Override
     public void onConfirm(Object tag) {
-        fdb.getReference("groups")
-                .child(group.getId())
-                .child("users")
-                .child(user.getUid())
+        String tagStr = (String) tag;
+        switch (tagStr) {
+            case "exit_group":
+                exitGroup();
+                break;
+        }
+    }
+
+    private void exitGroup() {
+        Fdb.getGroupMemberRef(group.getId(), user.getUid())
                 .removeValue()
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        fdb.getReference("users")
-                                .child(user.getUid())
-                                .child("groups")
-                                .child(group.getId())
+                        Fdb.getUserGroupRef(user.getUid(), group.getId())
                                 .removeValue()
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
@@ -329,9 +322,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     private void setupRecyclerView(Group group) {
-        Query query = fdb.getReference("groups")
-                .child(group.getId())
-                .child("orders")
+        Query query = Fdb.getGroupOrdersRef(group.getId())
                 .orderByChild("nCreateTime")
                 .limitToFirst(30);
 
