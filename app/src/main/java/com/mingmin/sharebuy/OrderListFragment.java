@@ -19,7 +19,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.mingmin.sharebuy.cloud.Fdb;
 
-public class OrderListFragment extends Fragment {
+public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.OrderRecyclerAdapterListener{
     private User user;
     private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> adapter;
     private OnFragmentInteractionListener mListener;
@@ -100,8 +100,13 @@ public class OrderListFragment extends Fragment {
                 .orderByChild("nCreateTime")
                 .limitToFirst(30);
 
-        adapter = new OrderRecyclerAdapter(getContext(), query, user);
+        adapter = new OrderRecyclerAdapter(getContext(), this, query, user);
         recyclerView.setAdapter(adapter);
         adapter.startListening();
+    }
+
+    @Override
+    public void onOrderItemViewClicked(Order order) {
+
     }
 }

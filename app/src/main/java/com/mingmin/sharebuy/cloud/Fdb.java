@@ -12,11 +12,18 @@ public class Fdb {
                 .child("userInfo");
     }
 
-    public static DatabaseReference getNicknameRef(String uid) {
+    public static DatabaseReference getUserNicknameRef(String uid) {
         return fdb.getReference("users")
                 .child(uid)
                 .child("userInfo")
                 .child("nickname");
+    }
+
+    public static DatabaseReference getUserTokenRef(String uid, String token) {
+        return fdb.getReference("users")
+                .child(uid)
+                .child("tokens")
+                .child(token);
     }
 
     public static DatabaseReference getGroupsRef() {

@@ -158,7 +158,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            Fdb.getNicknameRef(group.getFounderUid())
+            Fdb.getUserNicknameRef(group.getFounderUid())
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {

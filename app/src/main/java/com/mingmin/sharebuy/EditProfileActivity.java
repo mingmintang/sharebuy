@@ -32,7 +32,7 @@ public class EditProfileActivity extends AppCompatActivity {
 
         User user = (User) getIntent().getSerializableExtra("user");
         email = getIntent().getStringExtra("email");
-        nicknameRef = Fdb.getNicknameRef(user.getUid());
+        nicknameRef = Fdb.getUserNicknameRef(user.getUid());
 
         btnConfirm = findViewById(R.id.edit_profile_confirm);
 

@@ -21,6 +21,8 @@ import com.google.firebase.database.Query;
 import com.mingmin.sharebuy.dialog.BuyDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 
+import java.util.HashMap;
+
 public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> implements PopupMenu.OnMenuItemClickListener {
     class OrderHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
@@ -72,16 +74,18 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
     private String[] coinUnits;
     private String[] orderStates;
     private User user;
+    private OrderRecyclerAdapterListener listener;
 
     private OrderRecyclerAdapter(@NonNull FirebaseRecyclerOptions<Order> options) {
         super(options);
     }
 
-    public OrderRecyclerAdapter(Context context, Query query, User user) {
+    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Query query, User user) {
         this(new FirebaseRecyclerOptions.Builder<Order>()
                 .setQuery(query, Order.class)
                 .build());
         this.context = context;
+        this.listener = listener;
         coinUnits = context.getResources().getStringArray(R.array.coin_units);
         orderStates = context.getResources().getStringArray(R.array.order_states);
         this.user = user;
@@ -100,8 +104,7 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                BuyOrderDialog.newInstance(order)
-                        .show(((AppCompatActivity) context).getSupportFragmentManager(), "buyOrderDialog");
+                listener.onOrderItemViewClicked(order);
             }
         });
         holder.tvName.setText(order.getName());
@@ -127,10 +130,14 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.order_menu_buy:
-                BuyDialog.newInstance(5).show(((AppCompatActivity) context).getSupportFragmentManager(), "buyDialog");
+//                BuyDialog.newInstance(5).show(((AppCompatActivity) context).getSupportFragmentManager(), "buyDialog");
                 return true;
             default:
                 return false;
         }
+    }
+
+    public interface OrderRecyclerAdapterListener {
+        void onOrderItemViewClicked(Order order);
     }
 }

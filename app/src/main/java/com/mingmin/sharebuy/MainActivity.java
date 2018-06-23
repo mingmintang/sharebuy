@@ -133,8 +133,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             return true;
         }
         if (id == R.id.menu_editProfile) {
-            Intent intent = new Intent(this, EditProfileActivity.class);
-            startActivityForResult(intent, RC_EDIT_PROFILE);
+            goToEditProfileActivity();
             return true;
         }
 
@@ -205,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     private void updateNickname() {
-        final DatabaseReference ref = Fdb.getNicknameRef(fuser.getUid());
+        final DatabaseReference ref = Fdb.getUserNicknameRef(fuser.getUid());
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -259,6 +258,13 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         return false;
     }
 
+    private void goToEditProfileActivity() {
+        Intent intent = new Intent(this, EditProfileActivity.class);
+        intent.putExtra("user", user);
+        intent.putExtra("email", fuser.getEmail());
+        startActivityForResult(intent, RC_EDIT_PROFILE);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -266,10 +272,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             case RC_SIGN_IN:
                 if (resultCode == RESULT_OK) {
                     initAfterSignIn();
-                    Intent intent = new Intent(this, EditProfileActivity.class);
-                    intent.putExtra("user", user);
-                    intent.putExtra("email", fuser.getEmail());
-                    startActivityForResult(intent, RC_EDIT_PROFILE);
+                    goToEditProfileActivity();
                 }
                 break;
             case RC_EDIT_PROFILE:

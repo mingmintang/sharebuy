@@ -236,6 +236,11 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                             .show(getSupportFragmentManager(), "GroupRemove");
                 }
             });
+            if (user.getUid().equals(group.getFounderUid())) {
+                holder.btnRemove.setVisibility(View.INVISIBLE);
+            } else {
+                holder.btnRemove.setVisibility(View.VISIBLE);
+            }
         }
 
         @Override
