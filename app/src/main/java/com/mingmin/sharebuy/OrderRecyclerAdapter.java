@@ -2,7 +2,6 @@ package com.mingmin.sharebuy;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -18,8 +17,6 @@ import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.database.Query;
-import com.mingmin.sharebuy.dialog.BuyDialog;
-import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 
 import java.util.HashMap;
 
@@ -32,8 +29,7 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
         TextView tvCount;
         TextView tvAmount;
         TextView tvCoinUnit;
-        TextView tvNickname;
-        TextView tvState;
+        TextView tvStatus;
         ImageButton ibMenu;
         PopupMenu popupMenu;
         OrderHolder(View itemView) {
@@ -49,8 +45,7 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
             tvCount = itemView.findViewById(R.id.row_order_count);
             tvAmount = itemView.findViewById(R.id.row_order_amount);
             tvCoinUnit = itemView.findViewById(R.id.row_order_coin_unit);
-            tvNickname = itemView.findViewById(R.id.row_order_nickname);
-            tvState = itemView.findViewById(R.id.row_order_state);
+            tvStatus = itemView.findViewById(R.id.row_order_status);
             ibMenu = itemView.findViewById(R.id.row_order_menu);
             popupMenu = new PopupMenu(context, ibMenu);
             popupMenu.getMenuInflater().inflate(R.menu.order_menu, popupMenu.getMenu());
@@ -72,23 +67,25 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
 
     private Context context;
     private String[] coinUnits;
-    private String[] orderStates;
+    private String[] orderStatus;
     private User user;
+    private HashMap<String, Member> members;
     private OrderRecyclerAdapterListener listener;
 
     private OrderRecyclerAdapter(@NonNull FirebaseRecyclerOptions<Order> options) {
         super(options);
     }
 
-    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Query query, User user) {
+    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Query query, User user, HashMap<String, Member> members) {
         this(new FirebaseRecyclerOptions.Builder<Order>()
                 .setQuery(query, Order.class)
                 .build());
         this.context = context;
         this.listener = listener;
         coinUnits = context.getResources().getStringArray(R.array.coin_units);
-        orderStates = context.getResources().getStringArray(R.array.order_states);
+        orderStatus = context.getResources().getStringArray(R.array.order_status);
         this.user = user;
+        this.members = members;
     }
 
     @NonNull
@@ -104,7 +101,7 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listener.onOrderItemViewClicked(order);
+                listener.onOrderItemViewClicked(order, members);
             }
         });
         holder.tvName.setText(order.getName());
@@ -113,7 +110,11 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
         holder.tvCount.setText(String.valueOf(order.getBuyCount()));
         holder.calculateAmount();
         holder.tvCoinUnit.setText(coinUnits[order.getCoinUnit()]);
-        holder.tvState.setText(orderStates[order.getState()]);
+        String nickname = getNickname(order);
+        if (nickname != null) {
+            String status = nickname + orderStatus[order.getState()];
+            holder.tvStatus.setText(status);
+        }
 
         RequestOptions requestOptions = new RequestOptions()
                 .centerCrop()
@@ -124,6 +125,29 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
                 .load(order.getImageUrl())
                 .apply(requestOptions)
                 .into(holder.imageView);
+    }
+
+    private String getNickname(Order order) {
+        String nickname = null;
+        switch (order.getState()) {
+            case Order.STATE_CREATE:
+                nickname = members.get(order.getCreatorUid()).getNickname();
+                break;
+            case Order.STATE_TAKE:
+                nickname = members.get(order.getTakerUid()).getNickname();
+                break;
+            case Order.STATE_END:
+                nickname = members.get(order.getTakerUid()).getNickname();
+                break;
+            case Order.STATE_CANCEL:
+                if (order.getTakerUid() == null) {
+                    nickname = members.get(order.getCreatorUid()).getNickname();
+                } else {
+                    nickname = members.get(order.getTakerUid()).getNickname();
+                }
+                break;
+        }
+        return nickname;
     }
 
     @Override
@@ -138,6 +162,6 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
     }
 
     public interface OrderRecyclerAdapterListener {
-        void onOrderItemViewClicked(Order order);
+        void onOrderItemViewClicked(Order order, HashMap<String, Member> members);
     }
 }

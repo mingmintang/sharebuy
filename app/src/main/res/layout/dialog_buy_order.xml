@@ -67,7 +67,6 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
-                android:text="商品名稱"
                 android:textAppearance="@android:style/TextAppearance.Material.Medium"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.0"
@@ -81,7 +80,6 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
-                android:text="補充說明"
                 android:textAppearance="@android:style/TextAppearance.Material.Medium"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -94,7 +92,6 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
-                android:text="Kate x 1 = 100000\nMomo x 2 = 200000\nRanran x 3 = 300000"
                 android:textAppearance="@android:style/TextAppearance.Material.Medium"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -134,9 +131,9 @@
             android:layout_height="40dp"
             android:ems="2"
             android:gravity="center"
-            android:hint="99"
             android:inputType="number"
-            android:text="99" />
+            android:selectAllOnFocus="false"
+            android:singleLine="true" />
     </android.support.design.widget.TextInputLayout>
 
     <Button
@@ -156,7 +153,6 @@
         android:layout_marginBottom="12dp"
         android:layout_marginStart="4dp"
         android:ems="5"
-        android:text="100000"
         android:textAppearance="@android:style/TextAppearance.Material.Large"
         app:layout_constraintBottom_toBottomOf="@+id/buy_order_buyCount_layout"
         app:layout_constraintStart_toEndOf="@+id/buy_order_increase" />

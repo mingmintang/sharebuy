@@ -3,36 +3,42 @@ package com.mingmin.sharebuy.dialog;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.os.Bundle;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatDialogFragment;
-import android.util.Log;
+import android.text.Editable;
+import android.text.InputFilter;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.Buyer;
 import com.mingmin.sharebuy.Member;
 import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.R;
-import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.utils.InputFilterMinMax;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
 public class BuyOrderDialog extends AppCompatDialogFragment {
+    private BuyOrderListener listener;
     private Order order;
     private HashMap<String, Member> members;
+    private TextView tvAmount;
+    private String buyerListResult;
+    private int hasBoughtCount;
 
-    public static BuyOrderDialog newInstance(Order order, HashMap<String, Member> members) {
+    public static BuyOrderDialog newInstance(BuyOrderListener listener, Order order, HashMap<String, Member> members) {
         BuyOrderDialog fragment = new BuyOrderDialog();
+        fragment.listener = listener;
         fragment.order = order;
         fragment.members = members;
         return fragment;
@@ -40,16 +46,18 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        initBuyerList(members);
         View view = LayoutInflater.from(getContext())
                 .inflate(R.layout.dialog_buy_order, null, false);
-        initView(view);
         AlertDialog dialog = new AlertDialog.Builder(getContext())
                 .setView(view)
                 .create();
+        dialog.getWindow().setWindowAnimations(R.style.dialog_animation_up);
+        initView(view, dialog);
         return dialog;
     }
 
-    private void initView(View view) {
+    private void initView(View view, final AlertDialog dialog) {
         ImageView imageView = view.findViewById(R.id.buy_order_image);
         RequestOptions requestOptions = new RequestOptions().centerCrop()
                 .centerInside()
@@ -73,34 +81,89 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
         TextView tvDesc = view.findViewById(R.id.buy_order_desc);
         tvDesc.setText(order.getDesc());
 
-        setupBuyerList(view);
-    }
+        TextView tvBuyerList = view.findViewById(R.id.buy_order_buyer_list);
+        tvBuyerList.setText(buyerListResult);
 
-    private void setupBuyerList(View view) {
-        final TextView tvBuyerList = view.findViewById(R.id.buy_order_buyer_list);
-        if (members == null && order.getGroupId() != null) {
-            Fdb.getGroupMembersRef(order.getGroupId())
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            HashMap<String, Member> members = (HashMap<String, Member>) dataSnapshot.getValue();
-                            tvBuyerList.setText(getBuyerList(members));
-                        }
+        final int maxBuyCount = (order.getMaxBuyCount() == -1) ? -1 : (order.getMaxBuyCount() - hasBoughtCount);
+        int minBuyCount = (maxBuyCount == 0) ? 0 : 1;
 
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
+        tvAmount = view.findViewById(R.id.buy_order_amount);
+        updateAmount(minBuyCount);
 
-                        }
-                    });
-        } else {
-            tvBuyerList.setText(getBuyerList(members));
+        TextInputLayout etBuyCountLayout = view.findViewById(R.id.buy_order_buyCount_layout);
+        if (maxBuyCount != -1) {
+            etBuyCountLayout.setHint(String.valueOf(maxBuyCount));
+        }
+
+        final TextInputEditText etBuyCount = view.findViewById(R.id.buy_order_buyCount);
+        etBuyCount.setText(String.valueOf(minBuyCount));
+        etBuyCount.setFilters(new InputFilter[]{new InputFilterMinMax(1, maxBuyCount)});
+        etBuyCount.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                int buyCount = Integer.parseInt(s.toString());
+                updateAmount(buyCount);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) { }
+        });
+
+        Button btnDecrease = view.findViewById(R.id.buy_order_decrease);
+        btnDecrease.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int buyCount = Integer.parseInt(etBuyCount.getText().toString());
+                if (buyCount > 1) {
+                    buyCount -= 1;
+                    etBuyCount.setText(String.valueOf(buyCount));
+                }
+            }
+        });
+
+        Button btnIncrease = view.findViewById(R.id.buy_order_increase);
+        btnIncrease.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int buyCount = Integer.parseInt(etBuyCount.getText().toString());
+                if (buyCount < maxBuyCount) {
+                    buyCount += 1;
+                    etBuyCount.setText(String.valueOf(buyCount));
+                }
+            }
+        });
+
+        Button btnConfirm = view.findViewById(R.id.buy_order_confirm);
+        btnConfirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                listener.onBuyOrderConfirm(order, Integer.parseInt(etBuyCount.getText().toString()));
+                dialog.dismiss();
+            }
+        });
+
+        if (etBuyCount.getText().toString().equals("0")) {
+            btnConfirm.setEnabled(false);
+            btnDecrease.setEnabled(false);
+            btnIncrease.setEnabled(false);
+            etBuyCount.setEnabled(false);
         }
     }
 
-    private String getBuyerList(HashMap<String, Member> members) {
+    private void updateAmount(int buyCount) {
+        int amount = buyCount * order.getPrice();
+        this.tvAmount.setText(String.valueOf(amount));
+    }
+
+    private void initBuyerList(HashMap<String, Member> members) {
+        hasBoughtCount = 0;
+        buyerListResult = "";
         HashMap<String, Buyer> map = (HashMap<String, Buyer>) order.getBuyers();
         if (map.size() == 0) {
-            return "";
+            return;
         }
         ArrayList<Buyer> buyers = new ArrayList<>(map.values());
         Collections.sort(buyers, new Comparator<Buyer>() {
@@ -111,6 +174,7 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
         });
         StringBuffer sb = new StringBuffer();
         for (Buyer buyer : buyers) {
+            hasBoughtCount += buyer.getBuyCount();
             sb.append(members.get(buyer.getUid()).getNickname())
                     .append(" +")
                     .append(buyer.getBuyCount())
@@ -118,10 +182,10 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
                     .append(order.getPrice() * buyer.getBuyCount())
                     .append("\n");
         }
-        return sb.toString();
+        buyerListResult = sb.toString();
     }
 
-    public interface OnBuyOrderListener {
-
+    public interface BuyOrderListener {
+        void onBuyOrderConfirm(Order order, int buyCount);
     }
 }

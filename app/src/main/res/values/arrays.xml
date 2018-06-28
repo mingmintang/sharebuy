@@ -7,10 +7,10 @@
         <item>美元</item>
         <item>歐元</item>
     </string-array>
-    <string-array name="order_states">
-        <item>未接單</item>
-        <item>已接單</item>
-        <item>已結單</item>
-        <item>已取消</item>
+    <string-array name="order_status">
+        <item>建立\n等待接單購買</item>
+        <item>接單\n能下單購買</item>
+        <item>結單</item>
+        <item>取消</item>
     </string-array>
 </resources>

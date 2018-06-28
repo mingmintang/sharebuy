@@ -26,14 +26,14 @@ import java.util.ArrayList;
 public class SelectGroupDialog extends AppCompatDialogFragment {
     private String title;
     private String uid;
-    private OnSelectGroupListener listener;
+    private SelectGroupListener listener;
     private Object tag;
     private ArrayList<Group> groups = new ArrayList<>();
     private RecyclerView recyclerView;
     private Button btnConfirm;
 
     public static SelectGroupDialog newInstance(String title, String uid,
-                                                OnSelectGroupListener listener, Object tag) {
+                                                SelectGroupListener listener, Object tag) {
         SelectGroupDialog fragment = new SelectGroupDialog();
         fragment.title = title;
         fragment.uid = uid;
@@ -69,7 +69,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         return dialog;
     }
 
-    public interface OnSelectGroupListener {
+    public interface SelectGroupListener {
         void onSelectGroupConfirm(Group group, Object tag);
     }
 

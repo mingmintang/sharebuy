@@ -1,7 +1,5 @@
 package com.mingmin.sharebuy;
 
-import android.util.Log;
-
 import com.google.firebase.database.Exclude;
 
 import java.util.HashMap;
@@ -22,7 +20,14 @@ public class Order {
     public static final int STATE_END = 2;
     public static final int STATE_CANCEL =3;
 
-    private int state;
+    public static final String KEY_STATE = "state";
+    public static final String KEY_MAX_BUY_COUNT = "maxBuyCount";
+    public static final String KEY_BUY_COUNT = "buyCount";
+
+    /**
+     * Need synchronize value for buyers and taker.
+     */
+    private Map<String, Integer> sync;
     private String imagePath;
     private String imageUrl;
     private String id;
@@ -33,7 +38,6 @@ public class Order {
     private String groupId;
     private int price;
     private int coinUnit; // index of coin_units string array
-    private int maxBuyCount;
     private long createTime;
     private long endTime;
     private long nCreateTime; // Negative version for firebase desc sorting
@@ -47,14 +51,54 @@ public class Order {
         this.imagePath = imagePath;
         setCreateTime();
         buyers = new HashMap<>();
+        initSync();
     }
 
+    private void initSync() {
+        sync = new HashMap<>();
+        setState(STATE_CREATE);
+        setMaxBuyCount(-1);
+        setBuyCount(0);
+    }
+
+    public Map<String, Integer> getSync() {
+        return sync;
+    }
+
+    @Exclude
     public int getState() {
-        return state;
+        return sync.get(KEY_STATE);
     }
 
+    @Exclude
     public void setState(int state) {
-        this.state = state;
+        sync.put(KEY_STATE, state);
+    }
+
+    /**
+     * -1: no limit max buy count
+     */
+    @Exclude
+    public int getMaxBuyCount() {
+        return sync.get(KEY_MAX_BUY_COUNT);
+    }
+
+    @Exclude
+    public void setMaxBuyCount(int maxBuyCount) {
+        sync.put(KEY_MAX_BUY_COUNT, maxBuyCount);
+    }
+
+    @Exclude
+    public int getBuyCount() {
+        return sync.get(KEY_BUY_COUNT);
+    }
+
+    /**
+     * The buyer would add values to child buyers after buyCount is updated successfully.
+     */
+    @Exclude
+    public void setBuyCount(int buyCount) {
+        sync.put(KEY_BUY_COUNT, buyCount);
     }
 
     public String getImagePath() {
@@ -135,25 +179,6 @@ public class Order {
 
     public void setCoinUnit(int coinUnit) {
         this.coinUnit = coinUnit;
-    }
-
-    @Exclude
-    public int getBuyCount() {
-        int count = 0;
-        if (buyers != null && !buyers.isEmpty()) {
-            for (Buyer buyer : buyers.values()) {
-                count += buyer.getBuyCount();
-            }
-        }
-        return count;
-    }
-
-    public int getMaxBuyCount() {
-        return maxBuyCount;
-    }
-
-    public void setMaxBuyCount(int maxBuyCount) {
-        this.maxBuyCount = maxBuyCount;
     }
 
     public long getCreateTime() {

@@ -36,7 +36,7 @@ public class Buyer {
         return orderTime;
     }
 
-    public long getBuyCount() {
+    public int getBuyCount() {
         return buyCount;
     }
 

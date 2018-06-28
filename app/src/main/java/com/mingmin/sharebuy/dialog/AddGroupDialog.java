@@ -15,9 +15,9 @@ import android.widget.EditText;
 import com.mingmin.sharebuy.R;
 
 public class AddGroupDialog extends AppCompatDialogFragment {
-    private OnAddGroupListener listener;
+    private AddGroupListener listener;
 
-    public static AddGroupDialog newInstance(OnAddGroupListener listener) {
+    public static AddGroupDialog newInstance(AddGroupListener listener) {
         AddGroupDialog fragment = new AddGroupDialog();
         fragment.listener = listener;
         return fragment;
@@ -56,7 +56,7 @@ public class AddGroupDialog extends AppCompatDialogFragment {
         return dialog;
     }
 
-    public interface OnAddGroupListener {
+    public interface AddGroupListener {
         void onAddGroupConfirm(String groupName);
     }
 }

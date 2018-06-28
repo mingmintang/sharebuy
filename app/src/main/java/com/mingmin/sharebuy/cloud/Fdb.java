@@ -75,6 +75,37 @@ public class Fdb {
                 .child("orders");
     }
 
+    public static DatabaseReference getGroupOrderRef(String groupId, String orderId) {
+        return fdb.getReference("groups")
+                .child(groupId)
+                .child("orders")
+                .child(orderId);
+    }
+
+    public static DatabaseReference getGroupOrderBuyCountRef(String groupId, String orderId) {
+        return fdb.getReference("groups")
+                .child(groupId)
+                .child("orders")
+                .child(orderId)
+                .child("sync/buyCount");
+    }
+
+    public static DatabaseReference getGroupOrderSyncRef(String groupId, String orderId) {
+        return fdb.getReference("groups")
+                .child(groupId)
+                .child("orders")
+                .child(orderId)
+                .child("sync");
+    }
+
+    public static DatabaseReference getGroupOrderBuyersRef(String groupId, String orderId) {
+        return fdb.getReference("groups")
+                .child(groupId)
+                .child("orders")
+                .child(orderId)
+                .child("buyers");
+    }
+
     public static DatabaseReference getUserOrdersRef(String uid) {
         return fdb.getReference("users")
                 .child(uid)

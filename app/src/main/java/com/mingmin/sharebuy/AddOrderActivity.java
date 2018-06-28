@@ -27,7 +27,7 @@ import java.io.File;
 
 public class AddOrderActivity extends AppCompatActivity implements
         SelectOrderImageFragment.OnFragmentInteractionListener,
-        EditOrderFragment.OnFragmentInteractionListener, ViewPager.OnPageChangeListener, SelectGroupDialog.OnSelectGroupListener, ConfirmDialog.OnConfirmListener {
+        EditOrderFragment.OnFragmentInteractionListener, ViewPager.OnPageChangeListener, SelectGroupDialog.SelectGroupListener, ConfirmDialog.OnConfirmListener {
 
     private ViewPager viewPager;
     private Button btnAskFor;

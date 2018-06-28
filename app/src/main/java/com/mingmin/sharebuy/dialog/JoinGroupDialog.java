@@ -30,11 +30,11 @@ import java.util.ArrayList;
 
 public class JoinGroupDialog extends AppCompatDialogFragment {
 
-    private OnJoinGroupListener listener;
+    private JoinGroupListener listener;
     private ArrayList<Group> searchedGroups = new ArrayList<>();
     private RecyclerView recyclerView;
 
-    public static JoinGroupDialog newInstance(OnJoinGroupListener listener) {
+    public static JoinGroupDialog newInstance(JoinGroupListener listener) {
         JoinGroupDialog fragment = new JoinGroupDialog();
         fragment.listener = listener;
         return fragment;
@@ -114,7 +114,7 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
         return dialog;
     }
 
-    public interface OnJoinGroupListener {
+    public interface JoinGroupListener {
         void onJoinGroupConfirm(Group group);
     }
 

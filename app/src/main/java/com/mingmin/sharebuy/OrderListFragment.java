@@ -19,6 +19,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.mingmin.sharebuy.cloud.Fdb;
 
+import java.util.HashMap;
+
 public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.OrderRecyclerAdapterListener{
     private User user;
     private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> adapter;
@@ -96,17 +98,17 @@ public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        Query query = Fdb.getUserOrdersRef(user.getUid())
-                .orderByChild("nCreateTime")
-                .limitToFirst(30);
-
-        adapter = new OrderRecyclerAdapter(getContext(), this, query, user);
-        recyclerView.setAdapter(adapter);
-        adapter.startListening();
+//        Query query = Fdb.getUserOrdersRef(user.getUid())
+//                .orderByChild("nCreateTime")
+//                .limitToFirst(30);
+//
+//        adapter = new OrderRecyclerAdapter(getContext(), this, query, user);
+//        recyclerView.setAdapter(adapter);
+//        adapter.startListening();
     }
 
     @Override
-    public void onOrderItemViewClicked(Order order) {
+    public void onOrderItemViewClicked(Order order, HashMap<String, Member> members) {
 
     }
 }

@@ -11,7 +11,6 @@ public class Group implements Serializable{
     private long createdTime;
     private long nCreatedTime; // Negative version for firebase desc sorting
     private int searchCode;
-    private boolean isPublic = false;
 
     private Group() {
     }
@@ -68,14 +67,6 @@ public class Group implements Serializable{
 
     public int getSearchCode() {
         return searchCode;
-    }
-
-    public boolean isPublic() {
-        return isPublic;
-    }
-
-    public void setPublic(boolean aPublic) {
-        isPublic = aPublic;
     }
 
     @Override

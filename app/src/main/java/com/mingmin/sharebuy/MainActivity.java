@@ -150,9 +150,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         }
         switch (id) {
             case R.id.nav_order:
-                fm.beginTransaction()
-                        .replace(R.id.frame_layout, OrderListFragment.newInstance(user))
-                        .commit();
+//                fm.beginTransaction()
+//                        .replace(R.id.frame_layout, OrderListFragment.newInstance(user))
+//                        .commit();
                 break;
             case R.id.nav_order_history:
                 fm.beginTransaction()

@@ -4,10 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -24,31 +22,27 @@ import android.widget.SpinnerAdapter;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.jph.takephoto.model.TResult;
 import com.mingmin.sharebuy.cloud.CloudActions;
 import com.mingmin.sharebuy.cloud.Fdb;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
-import com.mingmin.sharebuy.notification.GroupNotification;
-import com.mingmin.sharebuy.notification.Notification;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.concurrent.Executor;
 
-public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroupListener,
-        PopupMenu.OnMenuItemClickListener, JoinGroupDialog.OnJoinGroupListener,
-        ConfirmDialog.OnConfirmListener, OrderRecyclerAdapter.OrderRecyclerAdapterListener {
+public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupListener,
+        PopupMenu.OnMenuItemClickListener, JoinGroupDialog.JoinGroupListener,
+        ConfirmDialog.OnConfirmListener, OrderRecyclerAdapter.OrderRecyclerAdapterListener,
+        BuyOrderDialog.BuyOrderListener {
     private final String TAG = getClass().getSimpleName();
     private User user;
     private OnFragmentInteractionListener mListener;
@@ -301,18 +295,38 @@ public class GroupFragment extends Fragment implements AddGroupDialog.OnAddGroup
     }
 
     private void setupRecyclerView(Group group) {
-        Query query = Fdb.getGroupOrdersRef(group.getId())
+        final Query query = Fdb.getGroupOrdersRef(group.getId())
                 .orderByChild("nCreateTime")
                 .limitToFirst(30);
 
-        recyclerAdapter = new OrderRecyclerAdapter(getContext(), this, query, user);
-        recyclerView.setAdapter(recyclerAdapter);
-        recyclerAdapter.startListening();
+        CloudActions.readGroupMembers(group.getId()).addOnSuccessListener(new OnSuccessListener<HashMap<String, Member>>() {
+            @Override
+            public void onSuccess(HashMap<String, Member> members) {
+                recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, query, user, members);
+                recyclerView.setAdapter(recyclerAdapter);
+                recyclerAdapter.startListening();
+            }
+        });
     }
 
     @Override
-    public void onOrderItemViewClicked(Order order) {
-        BuyOrderDialog.newInstance(order, null)
+    public void onOrderItemViewClicked(Order order, HashMap<String, Member> members) {
+        BuyOrderDialog.newInstance(this, order, members)
                 .show(getFragmentManager(), "buyOrderDialog");
+    }
+
+    @Override
+    public void onBuyOrderConfirm(Order order, int buyCount) {
+        CloudActions.buyGroupOrder(group.getId(), order.getId(), user.getUid(), buyCount)
+                .addOnSuccessListener(new OnSuccessListener<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean aBoolean) {
+                        if (aBoolean) {
+                            Snackbar.make(recyclerView, "購買成功", Snackbar.LENGTH_LONG).show();
+                        } else {
+                            Snackbar.make(recyclerView, "購買失敗", Snackbar.LENGTH_LONG).show();
+                        }
+                    }
+                });
     }
 }
