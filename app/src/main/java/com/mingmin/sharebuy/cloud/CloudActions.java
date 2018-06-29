@@ -16,6 +16,7 @@ import com.mingmin.sharebuy.User;
 import com.mingmin.sharebuy.notification.GroupNotification;
 import com.mingmin.sharebuy.notification.Notification;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -167,4 +168,9 @@ public class CloudActions {
 
         return dbSource.getTask();
     }
+
+//    public static Task<ArrayList<Order>> getUserEndOrders(String uid, long endTime) {
+//        TaskCompletionSource<ArrayList<Order>> dbSource = new TaskCompletionSource<>();
+//        Fdb.getUserEndOrdersRef(uid).
+//    }
 }

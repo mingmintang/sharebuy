@@ -29,6 +29,12 @@ public class Fdb {
                 .child(token);
     }
 
+    public static DatabaseReference getUserEndOrdersRef(String uid) {
+        return fdb.getReference("users")
+                .child(uid)
+                .child("endOrders");
+    }
+
     public static DatabaseReference getGroupsRef() {
         return fdb.getReference("groups");
     }

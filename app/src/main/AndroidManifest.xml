@@ -44,8 +44,13 @@
         <activity
             android:name=".GroupManageActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".GroupInfoActivity"
+        <activity
+            android:name=".GroupInfoActivity"
             android:screenOrientation="portrait" />
+
+        <service
+            android:name=".service.DownloadEndOrderIntentService"
+            android:exported="false"></service>
     </application>
 
 </manifest>
