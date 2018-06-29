@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.cloud;
 
 import java.io.Serializable;
 import java.util.Random;

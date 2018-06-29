@@ -1,9 +1,7 @@
 package com.mingmin.sharebuy.cloud;
 
 import android.support.annotation.NonNull;
-import android.util.Log;
 
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -14,10 +12,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
-import com.mingmin.sharebuy.Buyer;
-import com.mingmin.sharebuy.Group;
-import com.mingmin.sharebuy.Member;
-import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.User;
 import com.mingmin.sharebuy.notification.GroupNotification;
 import com.mingmin.sharebuy.notification.Notification;

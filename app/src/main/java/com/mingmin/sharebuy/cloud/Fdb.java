@@ -5,6 +5,9 @@ import com.google.firebase.database.FirebaseDatabase;
 
 public class Fdb {
     private static final FirebaseDatabase fdb = FirebaseDatabase.getInstance();
+    static {
+        fdb.setPersistenceEnabled(true);
+    }
 
     public static DatabaseReference getUserInfoRef(String uid) {
         return fdb.getReference("users")

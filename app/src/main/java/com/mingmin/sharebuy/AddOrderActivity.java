@@ -18,6 +18,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.cloud.Group;
+import com.mingmin.sharebuy.cloud.Order;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.SelectGroupDialog;
 import com.mingmin.sharebuy.fragment.EditOrderFragment;

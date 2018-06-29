@@ -17,6 +17,8 @@ import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.firebase.database.Query;
+import com.mingmin.sharebuy.cloud.Member;
+import com.mingmin.sharebuy.cloud.Order;
 
 import java.util.HashMap;
 

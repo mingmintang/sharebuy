@@ -27,6 +27,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.cloud.Group;
+import com.mingmin.sharebuy.database.Db;
 import com.mingmin.sharebuy.service.SharebuyFirebaseInstanceIdService;
 
 import java.util.Arrays;
@@ -196,11 +198,16 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     private void initAfterSignIn() {
         user = new User(fuser.getUid());
+        syncCloudData();
         updateNickname();
         tvAccount.setText(fuser.getEmail());
         if (!goToGroupManage() && !backToNavItemByFlag()) {
             goToNavItemHome();
         }
+    }
+
+    private void syncCloudData() {
+
     }
 
     private void updateNickname() {

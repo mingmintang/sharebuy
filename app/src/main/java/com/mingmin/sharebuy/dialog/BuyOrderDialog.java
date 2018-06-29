@@ -17,9 +17,9 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.mingmin.sharebuy.Buyer;
-import com.mingmin.sharebuy.Member;
-import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.cloud.Buyer;
+import com.mingmin.sharebuy.cloud.Member;
+import com.mingmin.sharebuy.cloud.Order;
 import com.mingmin.sharebuy.R;
 import com.mingmin.sharebuy.utils.InputFilterMinMax;
 

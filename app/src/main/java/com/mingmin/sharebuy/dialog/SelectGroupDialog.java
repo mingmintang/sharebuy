@@ -17,7 +17,7 @@ import android.widget.TextView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.mingmin.sharebuy.Group;
+import com.mingmin.sharebuy.cloud.Group;
 import com.mingmin.sharebuy.R;
 import com.mingmin.sharebuy.cloud.Fdb;
 

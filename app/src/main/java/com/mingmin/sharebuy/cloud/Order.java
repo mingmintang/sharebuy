@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.cloud;
 
 import com.google.firebase.database.Exclude;
 

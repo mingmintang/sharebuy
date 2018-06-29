@@ -7,7 +7,6 @@ import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,12 +16,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.mingmin.sharebuy.Buyer;
-import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.cloud.Buyer;
+import com.mingmin.sharebuy.cloud.Order;
 import com.mingmin.sharebuy.R;
 
 import java.io.File;
-import java.util.HashMap;
 
 public class EditOrderFragment extends Fragment {
     private Order order;

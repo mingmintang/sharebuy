@@ -20,6 +20,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.cloud.Group;
+import com.mingmin.sharebuy.cloud.Member;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 
 import java.util.ArrayList;

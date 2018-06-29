@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.cloud;
 
 /**
  * Group member, exclude group founder

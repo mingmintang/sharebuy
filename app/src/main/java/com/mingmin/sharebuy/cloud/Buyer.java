@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.cloud;
 
 public class Buyer {
     private String uid;
