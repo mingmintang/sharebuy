@@ -99,38 +99,38 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
         final ImageButton ibManage = view.findViewById(R.id.group_manage);
 
         spinner = view.findViewById(R.id.group_spinner);
-        groupsValueEventListener = new GroupsValueEventListener();
-        groupsRef = Fdb.getUserGroupsRef(user.getUid());
-        groupsRef.addValueEventListener(groupsValueEventListener);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                group = groups.get(position);
-                setupRecyclerView(group);
-                if (group.getFounderUid().equals(user.getUid())) {
-                    ibManage.setEnabled(true);
-                    ibManage.setImageResource(R.drawable.ic_group_setting);
-                    ibManage.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            Intent intent = new Intent(getContext(), GroupManageActivity.class);
-                            intent.putExtra("group", group);
-                            getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
-                        }
-                    });
-                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
-                } else {
-                    ibManage.setEnabled(false);
-                    ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
-                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
+//        groupsValueEventListener = new GroupsValueEventListener();
+//        groupsRef = Fdb.getUserGroupsRef(user.getUid());
+//        groupsRef.addValueEventListener(groupsValueEventListener);
+//        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            @Override
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                group = groups.get(position);
+//                setupRecyclerView(group);
+//                if (group.getFounderUid().equals(user.getUid())) {
+//                    ibManage.setEnabled(true);
+//                    ibManage.setImageResource(R.drawable.ic_group_setting);
+//                    ibManage.setOnClickListener(new View.OnClickListener() {
+//                        @Override
+//                        public void onClick(View v) {
+//                            Intent intent = new Intent(getContext(), GroupManageActivity.class);
+//                            intent.putExtra("group", group);
+//                            getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
+//                        }
+//                    });
+//                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
+//                } else {
+//                    ibManage.setEnabled(false);
+//                    ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
+//                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
+//                }
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//
+//            }
+//        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -298,18 +298,18 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     private void setupRecyclerView(Group group) {
-        final Query query = Fdb.getGroupOrdersRef(group.getId())
-                .orderByChild("nCreateTime")
-                .limitToFirst(30);
-
-        CloudActions.readGroupMembers(group.getId()).addOnSuccessListener(new OnSuccessListener<HashMap<String, Member>>() {
-            @Override
-            public void onSuccess(HashMap<String, Member> members) {
-                recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, query, user, members);
-                recyclerView.setAdapter(recyclerAdapter);
-                recyclerAdapter.startListening();
-            }
-        });
+//        final Query query = Fdb.getGroupOrdersRef(group.getId())
+//                .orderByChild("nCreateTime")
+//                .limitToFirst(30);
+//
+//        CloudActions.readGroupMembers(group.getId()).addOnSuccessListener(new OnSuccessListener<HashMap<String, Member>>() {
+//            @Override
+//            public void onSuccess(HashMap<String, Member> members) {
+//                recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, query, user, members);
+//                recyclerView.setAdapter(recyclerAdapter);
+//                recyclerAdapter.startListening();
+//            }
+//        });
     }
 
     @Override

@@ -27,7 +27,7 @@ public class OrderHistoryFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         user = (User) getArguments().getSerializable("user");
-        fdb = FirebaseDatabase.getInstance();
+//        fdb = FirebaseDatabase.getInstance();
     }
 
     @Override

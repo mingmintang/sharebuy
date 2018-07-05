@@ -6,10 +6,6 @@ public class User implements Serializable {
     private String uid;
     private String nickname;
 
-    public User(String uid) {
-        this.uid = uid;
-    }
-
     public User(String uid, String nickname) {
         this.uid = uid;
         this.nickname = nickname;

@@ -194,7 +194,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        String imageUrl = taskSnapshot.getDownloadUrl().toString();
+                        String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
                         DatabaseReference orderRef = Fdb.getGroupOrdersRef(order.getGroupId());
@@ -227,7 +227,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        String imageUrl = taskSnapshot.getDownloadUrl().toString();
+                        String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
                         DatabaseReference orderRef = Fdb.getGroupOrdersRef(order.getGroupId());
@@ -260,7 +260,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                 .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
                     @Override
                     public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        String imageUrl = taskSnapshot.getDownloadUrl().toString();
+                        String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
                         DatabaseReference orderRef = Fdb.getUserOrdersRef(order.getTakerUid());
