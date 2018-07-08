@@ -43,7 +43,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         group = (Group) getIntent().getSerializableExtra("group");
         selectedItemId = getIntent().getIntExtra("selectedItemId", R.id.group_manage_nav_joined);
-        membersRef = Fdb.getGroupMembersRef(group.getId());
+        membersRef = Fdb.getInstance().getGroupMembersRef(group.getId());
 
         recyclerView = findViewById(R.id.group_manage_recyclerView);
         recyclerView.setHasFixedSize(true);
@@ -257,7 +257,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Fdb.getUserGroupRef(user.getUid(), group.getId())
+                            Fdb.getInstance().getUserGroupRef(user.getUid(), group.getId())
                                     .removeValue()
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
@@ -353,7 +353,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Fdb.getUserGroupRef(user.getUid(), group.getId())
+                            Fdb.getInstance().getUserGroupRef(user.getUid(), group.getId())
                                     .setValue(true)
                                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override

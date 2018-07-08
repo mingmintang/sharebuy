@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,17 +20,17 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
-import com.mingmin.sharebuy.cloud.Group;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.R;
-import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.cloud.Clouds;
 
 import java.util.ArrayList;
 
 public class JoinGroupDialog extends AppCompatDialogFragment {
 
+    private final String TAG = getClass().getSimpleName();
     private JoinGroupListener listener;
     private ArrayList<Group> searchedGroups = new ArrayList<>();
     private RecyclerView recyclerView;
@@ -84,16 +85,11 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
                     etSearchCode.setError("不能空白");
                 } else {
                     int searchCode = Integer.parseInt(etSearchCode.getText().toString());
-                    Fdb.getGroupsRef().orderByChild("group/searchCode")
-                            .equalTo(searchCode)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                    Clouds.getInstance().searchGroupsBySearchCode(searchCode)
+                            .addOnSuccessListener(new OnSuccessListener<ArrayList<Group>>() {
                                 @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    searchedGroups.clear();
-                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        Group group = item.child("group").getValue(Group.class);
-                                        searchedGroups.add(group);
-                                    }
+                                public void onSuccess(ArrayList<Group> groups) {
+                                    searchedGroups = groups;
                                     recyclerView.setAdapter(new GroupAdapter(searchedGroups));
                                     if (searchedGroups.size() > 0) {
                                         btnConfirm.setEnabled(true);
@@ -101,10 +97,11 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
                                         btnConfirm.setEnabled(false);
                                     }
                                 }
-
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
                                 @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
+                                public void onFailure(@NonNull Exception e) {
+                                    Log.d(TAG, "onFailure: " + e.getMessage());
                                 }
                             });
                 }
@@ -167,19 +164,7 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            Fdb.getUserNicknameRef(group.getFounderUid())
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            String nickname = (String) dataSnapshot.getValue();
-                            if (nickname != null) {
-                                holder.tvFounderName.setText(nickname);
-                            }
-                        }
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                        }
-                    });
+            holder.tvFounderName.setText(group.getFounderNickname());
             holder.radioButton.setChecked(selectedPosition == position);
             holder.itemView.setTag(position);
 
@@ -195,6 +180,5 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
             selectedPosition = (int) v.getTag();
             notifyDataSetChanged();
         }
-
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,21 +22,23 @@ import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
 import com.mingmin.sharebuy.cloud.CloudActions;
+import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.cloud.Fdb;
-import com.mingmin.sharebuy.cloud.Group;
 import com.mingmin.sharebuy.cloud.Member;
 import com.mingmin.sharebuy.cloud.Order;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
+import com.mingmin.sharebuy.utils.InternetCheck;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,16 +48,16 @@ import java.util.HashMap;
 public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupListener,
         PopupMenu.OnMenuItemClickListener, JoinGroupDialog.JoinGroupListener,
         ConfirmDialog.OnConfirmListener, OrderRecyclerAdapter.OrderRecyclerAdapterListener,
-        BuyOrderDialog.BuyOrderListener {
+        BuyOrderDialog.BuyOrderListener, Clouds.UserGroupsListener{
     private final String TAG = getClass().getSimpleName();
     private User user;
     private OnFragmentInteractionListener mListener;
     private Spinner spinner;
     private DatabaseReference groupsRef;
     private GroupsValueEventListener groupsValueEventListener;
-    private ArrayList<Group> groups = new ArrayList<>();
+    private ArrayList<com.mingmin.sharebuy.cloud.Group> groups = new ArrayList<>();
     private PopupMenu popupMenu;
-    private Group group;
+    private com.mingmin.sharebuy.cloud.Group group;
     private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> recyclerAdapter;
     private RecyclerView recyclerView;
 
@@ -100,7 +103,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
 
         spinner = view.findViewById(R.id.group_spinner);
 //        groupsValueEventListener = new GroupsValueEventListener();
-//        groupsRef = Fdb.getUserGroupsRef(user.getUid());
+//        groupsRef = fdb.getUserGroupsRef(user.getUid());
 //        groupsRef.addValueEventListener(groupsValueEventListener);
 //        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 //            @Override
@@ -166,6 +169,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     @Override
     public void onStart() {
         super.onStart();
+        Clouds.getInstance().addUserGroupsListener(user.getUid(), this);
         if (recyclerAdapter != null) {
             recyclerAdapter.startListening();
         }
@@ -174,6 +178,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     @Override
     public void onStop() {
         super.onStop();
+        Clouds.getInstance().removeUserGroupsListener();
         if (recyclerAdapter != null) {
             recyclerAdapter.stopListening();
         }
@@ -214,7 +219,6 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Log.d(TAG, "onActivityResult: ");
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -225,20 +229,20 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
             if (groupIds != null && !groupIds.isEmpty()) {
                 groups.clear();
                 for (String groupId : groupIds.keySet()) {
-                    Fdb.getGroupRef(groupId)
+                    Fdb.getInstance().getGroupRef(groupId)
                             .addListenerForSingleValueEvent(new ValueEventListener() {
                                 @Override
                                 public void onDataChange(DataSnapshot dataSnapshot) {
-                                    Group group = dataSnapshot.getValue(Group.class);
+                                    com.mingmin.sharebuy.cloud.Group group = dataSnapshot.getValue(com.mingmin.sharebuy.cloud.Group.class);
                                     groups.add(group);
                                     if (groups.size() == groupIds.size()) {
-                                        Collections.sort(groups, new Comparator<Group>() {
+                                        Collections.sort(groups, new Comparator<com.mingmin.sharebuy.cloud.Group>() {
                                             @Override
-                                            public int compare(Group o1, Group o2) {
+                                            public int compare(com.mingmin.sharebuy.cloud.Group o1, com.mingmin.sharebuy.cloud.Group o2) {
                                                 return (int) (o2.getCreatedTime() - o1.getCreatedTime());
                                             }
                                         });
-                                        SpinnerAdapter adapter = new ArrayAdapter<Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
+                                        SpinnerAdapter adapter = new ArrayAdapter<com.mingmin.sharebuy.cloud.Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
                                         spinner.setAdapter(adapter);
                                         popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, true);
                                         popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
@@ -264,18 +268,51 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     @Override
+    public void onUserGroupsChanged(ArrayList<Group> groups) {
+        SpinnerAdapter adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, groups);
+        spinner.setAdapter(adapter);
+        popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, true);
+        popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
+    }
+
+    @Override
+    public void onUserGroupsIsEmpty() {
+        popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, false);
+        popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
+    }
+
+    @Override
     public void onJoinGroupConfirm(Group group) {
-        CloudActions.requestJoinGroup(group, user.getUid());
+        Clouds.getInstance().requestJoinGroup(group, user.getUid())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Snackbar.make(getView(), "已送加入群組通知", Snackbar.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Snackbar.make(getView(), "請求加入群組失敗，請檢查連線", Snackbar.LENGTH_LONG).show();
+                    }
+                });
     }
 
     @Override
     public void onAddGroupConfirm(String groupName) {
-        CloudActions.createNewGroup(groupName, user).addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void aVoid) {
-                Snackbar.make(getView(), "新增群組成功", Snackbar.LENGTH_LONG).show();
-            }
-        });
+        Clouds.getInstance().createNewGroup(groupName, user)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Snackbar.make(getView(), "新增群組成功", Snackbar.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Snackbar.make(getView(), "新增群組失敗", Snackbar.LENGTH_LONG).show();
+                    }
+                });
     }
 
     @Override
@@ -289,7 +326,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     private void exitGroup() {
-        CloudActions.exitGroup(group.getId(), user.getUid()).addOnSuccessListener(new OnSuccessListener<Void>() {
+        CloudActions.getInstance().exitGroup(group.getId(), user.getUid()).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
                 Snackbar.make(getView(), "退出群組成功", Snackbar.LENGTH_LONG).show();
@@ -297,8 +334,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
         });
     }
 
-    private void setupRecyclerView(Group group) {
-//        final Query query = Fdb.getGroupOrdersRef(group.getId())
+    private void setupRecyclerView(com.mingmin.sharebuy.cloud.Group group) {
+//        final Query query = fdb.getGroupOrdersRef(group.getId())
 //                .orderByChild("nCreateTime")
 //                .limitToFirst(30);
 //
@@ -320,7 +357,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
 
     @Override
     public void onBuyOrderConfirm(Order order, int buyCount) {
-        CloudActions.buyGroupOrder(group.getId(), order.getId(), user.getUid(), buyCount)
+        CloudActions.getInstance().buyGroupOrder(group.getId(), order.getId(), user.getUid(), buyCount)
                 .addOnSuccessListener(new OnSuccessListener<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {

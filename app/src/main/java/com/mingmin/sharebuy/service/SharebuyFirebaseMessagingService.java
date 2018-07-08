@@ -5,22 +5,24 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-import com.mingmin.sharebuy.cloud.Group;
+import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.MainActivity;
 import com.mingmin.sharebuy.R;
-import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.cloud.Clouds;
 
 import static com.mingmin.sharebuy.notification.Notification.ACTION_REQUEST_JOIN_GROUP;
 
 public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String CHANNEL_NAME_REQUEST_JOIN_GROUP = "請求加入群組";
+    private final String TAG = getClass().getSimpleName();
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -30,17 +32,16 @@ public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
 
         switch (action) {
             case ACTION_REQUEST_JOIN_GROUP:
-                requestJoinGroupNotification(action, groupId);
+                requestJoinGroupNotification(groupId);
                 break;
         }
     }
 
-    private void requestJoinGroupNotification(int action, String groupId) {
-        Fdb.getGroupRef(groupId).addListenerForSingleValueEvent(new ValueEventListener() {
+    private void requestJoinGroupNotification(String groupId) {
+        Clouds.getInstance().getGroupByGroupId(groupId)
+                .addOnSuccessListener(new OnSuccessListener<Group>() {
                     @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        Group group = dataSnapshot.getValue(Group.class);
-
+                    public void onSuccess(Group group) {
                         Intent intent = new Intent(SharebuyFirebaseMessagingService.this, MainActivity.class);
                         intent.putExtra("goToGroupManage", true);
                         intent.putExtra("group", group);
@@ -68,13 +69,12 @@ public class SharebuyFirebaseMessagingService extends FirebaseMessagingService {
 
                         notificationManager.notify(ACTION_REQUEST_JOIN_GROUP, builder.build());
                     }
-
+                })
+                .addOnFailureListener(new OnFailureListener() {
                     @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: " + e.getMessage());
                     }
                 });
     }
-
-
 }

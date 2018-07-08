@@ -30,7 +30,7 @@ public class GroupInfoActivity extends AppCompatActivity {
         setContentView(R.layout.activity_group_info);
 
         Group group = (Group) getIntent().getSerializableExtra("group");
-        membersRef = Fdb.getGroupMembersRef(group.getId());
+        membersRef = Fdb.getInstance().getGroupMembersRef(group.getId());
 
         TextView tvSearchCode = findViewById(R.id.group_info_searchCode);
         tvSearchCode.setText(String.valueOf(group.getSearchCode()));

@@ -44,7 +44,7 @@
             android:id="@+id/join_group_searchCode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="群組ID"
+            android:hint="群組搜尋碼"
             android:inputType="number"
             android:selectAllOnFocus="true"
             android:singleLine="true" />

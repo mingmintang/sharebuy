@@ -40,6 +40,7 @@ public class AddOrderActivity extends AppCompatActivity implements
     private String uid;
     private EditOrderFragment editOrderFragment;
     private String imagePath;
+    private Fdb fdb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +48,7 @@ public class AddOrderActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_add_order);
 
         uid = getIntent().getStringExtra("USER_UID");
-
+        fdb = Fdb.getInstance();
         initViews();
     }
 
@@ -197,7 +198,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                         String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
-                        DatabaseReference orderRef = Fdb.getGroupOrdersRef(order.getGroupId());
+                        DatabaseReference orderRef = fdb.getGroupOrdersRef(order.getGroupId());
                         String orderId = orderRef.push().getKey();
                         order.setId(orderId);
                         orderRef.child(orderId).setValue(order)
@@ -230,7 +231,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                         String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
-                        DatabaseReference orderRef = Fdb.getGroupOrdersRef(order.getGroupId());
+                        DatabaseReference orderRef = fdb.getGroupOrdersRef(order.getGroupId());
                         String orderId = orderRef.push().getKey();
                         order.setId(orderId);
                         orderRef.child(orderId).setValue(order)
@@ -263,7 +264,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                         String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
                         order.setImageUrl(imageUrl);
 
-                        DatabaseReference orderRef = Fdb.getUserOrdersRef(order.getTakerUid());
+                        DatabaseReference orderRef = fdb.getUserOrdersRef(order.getTakerUid());
                         String orderId = orderRef.push().getKey();
                         order.setId(orderId);
                         orderRef.child(orderId).setValue(order)

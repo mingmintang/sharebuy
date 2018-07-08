@@ -217,6 +217,12 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                                 break;
                         }
                     }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: " + e.getMessage());
+                    }
                 });
     }
 

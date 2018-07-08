@@ -84,7 +84,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         };
         recyclerView.setLayoutManager(llm);
 
-        Fdb.getUserGroupsRef(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+        Fdb.getInstance().getUserGroupsRef(uid).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         final long count = dataSnapshot.getChildrenCount();
@@ -94,7 +94,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
                             return;
                         }
                         for (DataSnapshot childSnap : dataSnapshot.getChildren()) {
-                            Fdb.getGroupRef(childSnap.getKey())
+                            Fdb.getInstance().getGroupRef(childSnap.getKey())
                                     .addListenerForSingleValueEvent(new ValueEventListener() {
                                         @Override
                                         public void onDataChange(DataSnapshot dataSnapshot) {
@@ -158,7 +158,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            Fdb.getUserNicknameRef(group.getFounderUid())
+            Fdb.getInstance().getUserNicknameRef(group.getFounderUid())
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(DataSnapshot dataSnapshot) {

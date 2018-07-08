@@ -93,7 +93,7 @@ public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-//        Query query = Fdb.getUserOrdersRef(user.getUid())
+//        Query query = fdb.getUserOrdersRef(user.getUid())
 //                .orderByChild("nCreateTime")
 //                .limitToFirst(30);
 //
