@@ -9,7 +9,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,25 +23,16 @@ import android.widget.SpinnerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.firestore.DocumentReference;
 import com.mingmin.sharebuy.cloud.CloudActions;
 import com.mingmin.sharebuy.cloud.Clouds;
-import com.mingmin.sharebuy.cloud.Fdb;
 import com.mingmin.sharebuy.cloud.Member;
 import com.mingmin.sharebuy.cloud.Order;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
-import com.mingmin.sharebuy.utils.InternetCheck;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 
 public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupListener,
@@ -53,13 +43,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     private User user;
     private OnFragmentInteractionListener mListener;
     private Spinner spinner;
-    private DatabaseReference groupsRef;
-    private GroupsValueEventListener groupsValueEventListener;
-    private ArrayList<com.mingmin.sharebuy.cloud.Group> groups = new ArrayList<>();
+    private Group currentGroup;
     private PopupMenu popupMenu;
-    private com.mingmin.sharebuy.cloud.Group group;
     private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> recyclerAdapter;
     private RecyclerView recyclerView;
+    private ImageButton ibManage;
 
     public static GroupFragment newInstance(User user) {
         Bundle args = new Bundle();
@@ -98,42 +86,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
                 popupMenu.show();
             }
         });
-
-        final ImageButton ibManage = view.findViewById(R.id.group_manage);
-
+        ibManage = view.findViewById(R.id.group_manage);
         spinner = view.findViewById(R.id.group_spinner);
-//        groupsValueEventListener = new GroupsValueEventListener();
-//        groupsRef = fdb.getUserGroupsRef(user.getUid());
-//        groupsRef.addValueEventListener(groupsValueEventListener);
-//        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                group = groups.get(position);
-//                setupRecyclerView(group);
-//                if (group.getFounderUid().equals(user.getUid())) {
-//                    ibManage.setEnabled(true);
-//                    ibManage.setImageResource(R.drawable.ic_group_setting);
-//                    ibManage.setOnClickListener(new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View v) {
-//                            Intent intent = new Intent(getContext(), GroupManageActivity.class);
-//                            intent.putExtra("group", group);
-//                            getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
-//                        }
-//                    });
-//                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
-//                } else {
-//                    ibManage.setEnabled(false);
-//                    ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
-//                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
-//                }
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parent) {
-//
-//            }
-//        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -152,12 +106,6 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
             throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
         }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        groupsRef.removeEventListener(groupsValueEventListener);
     }
 
     @Override
@@ -197,13 +145,13 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
                 return true;
             case R.id.group_menu_info:
                 Intent intent = new Intent(getContext(), GroupInfoActivity.class);
-                intent.putExtra("group", groups.get(spinner.getSelectedItemPosition()));
+                intent.putExtra("group", currentGroup);
                 getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_INFO);
                 return true;
             case R.id.group_menu_exit:
                 ConfirmDialog.newInstance(this,
                         "退出群組",
-                        "確定退出 " + group.getName() +" 群組？",
+                        "確定退出 " + currentGroup.getName() +" 群組？",
                         "exit_group")
                         .show(getFragmentManager(), "exit_group");
                 return true;
@@ -222,63 +170,17 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    class GroupsValueEventListener implements ValueEventListener {
-        @Override
-        public void onDataChange(DataSnapshot dataSnapshot) {
-            final HashMap<String, Boolean> groupIds = (HashMap<String, Boolean>) dataSnapshot.getValue();
-            if (groupIds != null && !groupIds.isEmpty()) {
-                groups.clear();
-                for (String groupId : groupIds.keySet()) {
-                    Fdb.getInstance().getGroupRef(groupId)
-                            .addListenerForSingleValueEvent(new ValueEventListener() {
-                                @Override
-                                public void onDataChange(DataSnapshot dataSnapshot) {
-                                    com.mingmin.sharebuy.cloud.Group group = dataSnapshot.getValue(com.mingmin.sharebuy.cloud.Group.class);
-                                    groups.add(group);
-                                    if (groups.size() == groupIds.size()) {
-                                        Collections.sort(groups, new Comparator<com.mingmin.sharebuy.cloud.Group>() {
-                                            @Override
-                                            public int compare(com.mingmin.sharebuy.cloud.Group o1, com.mingmin.sharebuy.cloud.Group o2) {
-                                                return (int) (o2.getCreatedTime() - o1.getCreatedTime());
-                                            }
-                                        });
-                                        SpinnerAdapter adapter = new ArrayAdapter<com.mingmin.sharebuy.cloud.Group>(getActivity(), android.R.layout.simple_list_item_1, groups);
-                                        spinner.setAdapter(adapter);
-                                        popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, true);
-                                        popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
-                                    }
-                                }
-
-                                @Override
-                                public void onCancelled(DatabaseError databaseError) {
-
-                                }
-                            });
-                }
-            } else {
-                popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, false);
-                popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
-            }
-        }
-
-        @Override
-        public void onCancelled(DatabaseError databaseError) {
-
-        }
-    }
-
     @Override
     public void onUserGroupsChanged(ArrayList<Group> groups) {
-        SpinnerAdapter adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, groups);
-        spinner.setAdapter(adapter);
-        popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, true);
-        popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
-    }
+        if (groups.size() > 0) {
+            setupSpinner(groups);
+            popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, true);
+            popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
+        } else {
+            popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, false);
+            popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
+        }
 
-    @Override
-    public void onUserGroupsIsEmpty() {
-        popupMenu.getMenu().setGroupVisible(R.id.group_menu_infoGroup, false);
-        popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
     }
 
     @Override
@@ -326,15 +228,56 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     private void exitGroup() {
-        CloudActions.getInstance().exitGroup(group.getId(), user.getUid()).addOnSuccessListener(new OnSuccessListener<Void>() {
+        Clouds.getInstance().exitGroup(currentGroup.getId(), user.getUid())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Snackbar.make(recyclerView, "退出群組成功", Snackbar.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Snackbar.make(recyclerView, "退出群組失敗", Snackbar.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void setupSpinner(final ArrayList<Group> groups) {
+        SpinnerAdapter adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1, groups);
+        spinner.setAdapter(adapter);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onSuccess(Void aVoid) {
-                Snackbar.make(getView(), "退出群組成功", Snackbar.LENGTH_LONG).show();
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                currentGroup = groups.get(position);
+//                setupRecyclerView(group);
+                if (currentGroup.getFounderUid().equals(user.getUid())) {
+                    ibManage.setEnabled(true);
+                    ibManage.setImageResource(R.drawable.ic_group_setting);
+                    ibManage.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(getContext(), GroupManageActivity.class);
+                            intent.putExtra("group", currentGroup);
+                            getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_MANAGE);
+                        }
+                    });
+                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, false);
+                } else {
+                    ibManage.setEnabled(false);
+                    ibManage.setImageResource(R.drawable.ic_group_setting_disabled);
+                    popupMenu.getMenu().setGroupVisible(R.id.group_menu_exitGroup, true);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
             }
         });
     }
 
-    private void setupRecyclerView(com.mingmin.sharebuy.cloud.Group group) {
+    private void setupRecyclerView(Group group) {
 //        final Query query = fdb.getGroupOrdersRef(group.getId())
 //                .orderByChild("nCreateTime")
 //                .limitToFirst(30);
@@ -357,7 +300,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
 
     @Override
     public void onBuyOrderConfirm(Order order, int buyCount) {
-        CloudActions.getInstance().buyGroupOrder(group.getId(), order.getId(), user.getUid(), buyCount)
+        CloudActions.getInstance().buyGroupOrder(currentGroup.getId(), order.getId(), user.getUid(), buyCount)
                 .addOnSuccessListener(new OnSuccessListener<Boolean>() {
                     @Override
                     public void onSuccess(Boolean aBoolean) {

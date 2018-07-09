@@ -64,14 +64,14 @@ function handleNotification(snapshot) {
     });
 }
 
-function sendMessageToDevices(founderRef, tokens, payload) {
+function sendMessageToDevices(toUserRef, tokens, payload) {
     return admin.messaging().sendToDevice(tokens, payload).then(res => {
         for (let i = 0; i < res.results.length; i++) {
             const result = res.results[i];
             if (result.error !== undefined &&
                 result.error.code === 'messaging/registration-token-not-registered') {
                 const tokenField = 'tokens.' + tokens[i];
-                founderRef.update({
+                toUserRef.update({
                     [tokenField]: FieldValue.delete()
                 });
             }

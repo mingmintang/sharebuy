@@ -37,13 +37,6 @@ public class CloudActions {
         fdb = Fdb.getInstance();
     }
 
-    public Task<Void> exitGroup(String groupId, String uid) {
-        Task<Void> deleteMember = fdb.getGroupMemberRef(groupId, uid).removeValue();
-        Task<Void> deleteGroupInUser = fdb.getUserGroupRef(groupId, uid).removeValue();
-
-        return Tasks.whenAll(deleteMember, deleteGroupInUser);
-    }
-
     public Task<HashMap<String, Member>> readGroupMembers(String groupId) {
         final TaskCompletionSource<HashMap<String, Member>> dbSource = new TaskCompletionSource<>();
         fdb.getGroupMembersRef(groupId)

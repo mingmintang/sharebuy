@@ -29,39 +29,39 @@ public class Fs {
         return db.batch();
     }
 
-    public CollectionReference getUsersRef() {
+    public CollectionReference getUsersCol() {
         return db.collection("users");
     }
 
-    public DocumentReference getUserRef(String uid) {
-        return getUsersRef().document(uid);
+    public DocumentReference getUserDoc(String uid) {
+        return getUsersCol().document(uid);
     }
 
-    public CollectionReference getUserGroupsRef(String uid) {
-        return getUserRef(uid).collection("groups");
+    public CollectionReference getUserGroupsCol(String uid) {
+        return getUserDoc(uid).collection("groups");
     }
 
-    public DocumentReference getUserGroupRef(String uid, String groupId) {
-        return getUserGroupsRef(uid).document(groupId);
+    public DocumentReference getUserGroupDoc(String uid, String groupId) {
+        return getUserGroupsCol(uid).document(groupId);
     }
 
-    public CollectionReference getGroupsRef() {
+    public CollectionReference getGroupsCol() {
         return db.collection("groups");
     }
 
-    public DocumentReference getGroupRef(String groupId) {
-        return getGroupsRef().document(groupId);
+    public DocumentReference getGroupDoc(String groupId) {
+        return getGroupsCol().document(groupId);
     }
 
-    public CollectionReference getGroupMembersRef(String groupId) {
-        return getGroupRef(groupId).collection("members");
+    public CollectionReference getGroupMembersCol(String groupId) {
+        return getGroupDoc(groupId).collection("members");
     }
 
-    public DocumentReference getGroupMemberRef(String groupId, String uid) {
-        return getGroupMembersRef(groupId).document(uid);
+    public DocumentReference getGroupMemberDoc(String groupId, String uid) {
+        return getGroupMembersCol(groupId).document(uid);
     }
 
-    public CollectionReference getRequestJoinGroupRef(String groupId) {
-        return getGroupRef(groupId).collection("requestJoin");
+    public CollectionReference getRequestJoinGroupCol(String groupId) {
+        return getGroupDoc(groupId).collection("requestJoin");
     }
 }

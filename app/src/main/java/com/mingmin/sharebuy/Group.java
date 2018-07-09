@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Group implements Serializable {
+    private GroupDoc groupDoc;
     private String id;
     private String name;
     private String founderUid;
@@ -17,7 +18,7 @@ public class Group implements Serializable {
 
     public Group(String id, GroupDoc groupDoc) {
         this.id = id;
-        updateValues(groupDoc);
+        setGroupDoc(groupDoc);
         members = new ArrayList<>();
     }
 
@@ -27,6 +28,15 @@ public class Group implements Serializable {
         setFounderNickname(groupDoc.getFounderNickname());
         setCreatedTime(groupDoc.getCreateTime());
         setSearchCode(groupDoc.getSearchCode());
+    }
+
+    public GroupDoc getGroupDoc() {
+        return groupDoc;
+    }
+
+    public void setGroupDoc(GroupDoc groupDoc) {
+        this.groupDoc = groupDoc;
+        updateValues(groupDoc);
     }
 
     public String getId() {
@@ -83,10 +93,6 @@ public class Group implements Serializable {
 
     public void setMembers(ArrayList<Member> members) {
         this.members = members;
-    }
-
-    public void setGroupDoc(GroupDoc groupDoc) {
-        updateValues(groupDoc);
     }
 
     public String searchNicknameByUid(String uid) {

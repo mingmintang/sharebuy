@@ -14,23 +14,15 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
-import com.mingmin.sharebuy.cloud.Fdb;
-import com.mingmin.sharebuy.cloud.Group;
-import com.mingmin.sharebuy.cloud.Member;
+import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 
 import java.util.ArrayList;
 
-public class GroupManageActivity extends AppCompatActivity implements ConfirmDialog.OnConfirmListener {
-
-    private DatabaseReference membersRef;
-    private ValueEventListener joinedValueEventListener;
-    private ValueEventListener joiningValueEventListener;
+public class GroupManageActivity extends AppCompatActivity implements ConfirmDialog.OnConfirmListener,
+        Clouds.GroupMembersListener {
     private RecyclerView recyclerView;
     private Group group;
     private int selectedItemId;
@@ -43,19 +35,16 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         group = (Group) getIntent().getSerializableExtra("group");
         selectedItemId = getIntent().getIntExtra("selectedItemId", R.id.group_manage_nav_joined);
-        membersRef = Fdb.getInstance().getGroupMembersRef(group.getId());
 
         recyclerView = findViewById(R.id.group_manage_recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        initValueEventListener();
-
         navigationView = findViewById(R.id.group_manage_navigationView);
         navigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                addValueEventListener(item.getItemId());
+                addGroupMembersListener(item.getItemId());
                 return true;
             }
         });
@@ -70,7 +59,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
     @Override
     protected void onStop() {
         super.onStop();
-        removeAllValueEventListener();
+        removeAllGroupMembersListener();
         selectedItemId = navigationView.getSelectedItemId();
     }
 
@@ -103,6 +92,16 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
     }
 
     @Override
+    public void onJoiningGroupMembersChanged(ArrayList<Member> members) {
+        recyclerView.setAdapter(new JoiningMemberAdapter(members));
+    }
+
+    @Override
+    public void onJoinedGroupMembersChanged(ArrayList<Member> members) {
+        recyclerView.setAdapter(new JoinedMemberAdapter(members));
+    }
+
+    @Override
     public void onConfirm(Object tag) {
         if (tag != null) {
             switch ((String) tag) {
@@ -117,92 +116,26 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
     }
 
-    private void initValueEventListener() {
-        joinedValueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                long dataCount = dataSnapshot.getChildrenCount();
-                ArrayList<User> members = new ArrayList<>();
-                if (dataCount == 0) {
-                    recyclerView.setAdapter(new JoinedMemberAdapter(members));
-                    return;
-                }
-                for (DataSnapshot snap : dataSnapshot.getChildren()) {
-                    String memberUid = snap.getKey();
-                    Member member = snap.getValue(Member.class);
-                    if (member != null) {
-                        members.add(new User(memberUid, member.getNickname()));
-                    } else {
-                        dataCount -= 1;
-                    }
-                    if (members.size() == dataCount) {
-                        recyclerView.setAdapter(new JoinedMemberAdapter(members));
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-
-        joiningValueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                long dataCount = dataSnapshot.getChildrenCount();
-                ArrayList<User> members = new ArrayList<>();
-                if (dataCount == 0) {
-                    recyclerView.setAdapter(new JoiningMemberAdapter(members));
-                    return;
-                }
-                for (DataSnapshot snap : dataSnapshot.getChildren()) {
-                    String memberUid = snap.getKey();
-                    Member member = snap.getValue(Member.class);
-                    if (member != null) {
-                        members.add(new User(memberUid, member.getNickname()));
-                    } else {
-                        dataCount -= 1;
-                    }
-                    if (members.size() == dataCount) {
-                        recyclerView.setAdapter(new JoiningMemberAdapter(members));
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-    }
-
-    private void addValueEventListener(int navItemId) {
-        removeAllValueEventListener();
+    private void addGroupMembersListener(int navItemId) {
+        removeAllGroupMembersListener();
         switch (navItemId) {
             case R.id.group_manage_nav_joined:
-                membersRef.orderByChild("isJoined").equalTo(true)
-                        .addValueEventListener(joinedValueEventListener);
+                Clouds.getInstance().addJoinedGroupMembersListener(group.getId(), this);
                 break;
             case R.id.group_manage_nav_joining:
-                membersRef.orderByChild("isJoined").equalTo(false)
-                        .addValueEventListener(joiningValueEventListener);
+                Clouds.getInstance().addJoiningGroupMembersListener(group.getId(), this);
                 break;
         }
     }
 
-    private void removeAllValueEventListener() {
-        if (joiningValueEventListener != null) {
-            membersRef.removeEventListener(joiningValueEventListener);
-        }
-        if (joinedValueEventListener != null) {
-            membersRef.removeEventListener(joinedValueEventListener);
-        }
+    private void removeAllGroupMembersListener() {
+        Clouds.getInstance().removeJoinedGroupMembersListener();
+        Clouds.getInstance().removeJoiningGroupMembersListener();
     }
 
     class JoinedMemberAdapter extends RecyclerView.Adapter<JoinedMemberAdapter.ViewHolder>
             implements ConfirmDialog.OnConfirmListener {
-        private ArrayList<User> members;
+        private ArrayList<Member> members;
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvNickname;
             Button btnRemove;
@@ -212,7 +145,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                 btnRemove = itemView.findViewById(R.id.joined_group_member_remove);
             }
         }
-        JoinedMemberAdapter(ArrayList<User> members) {
+        JoinedMemberAdapter(ArrayList<Member> members) {
             this.members = members;
         }
 
@@ -226,23 +159,18 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         @Override
         public void onBindViewHolder(@NonNull JoinedMemberAdapter.ViewHolder holder, int position) {
-            final User user = members.get(position);
-            holder.tvNickname.setText(user.getNickname());
+            final Member member = members.get(position);
+            holder.tvNickname.setText(member.getNickname());
             holder.btnRemove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     ConfirmDialog.newInstance(JoinedMemberAdapter.this,
                             "退出群組",
-                            "確定將 " + user.getNickname() + " 退出群組？",
-                            user)
+                            "確定將 " + member.getNickname() + " 退出群組？",
+                            member)
                             .show(getSupportFragmentManager(), "GroupRemove");
                 }
             });
-            if (user.getUid().equals(group.getFounderUid())) {
-                holder.btnRemove.setVisibility(View.INVISIBLE);
-            } else {
-                holder.btnRemove.setVisibility(View.VISIBLE);
-            }
         }
 
         @Override
@@ -252,19 +180,18 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         @Override
         public void onConfirm(Object tag) {
-            final User user = (User) tag;
-            membersRef.child(user.getUid()).removeValue()
+            Member member = (Member) tag;
+            Clouds.getInstance().exitGroup(group.getId(), member.getUid())
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Fdb.getInstance().getUserGroupRef(user.getUid(), group.getId())
-                                    .removeValue()
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-                                            Snackbar.make(recyclerView, "退出群組成功", Snackbar.LENGTH_LONG).show();
-                                        }
-                                    });
+                            Snackbar.make(recyclerView, "退出群組成功", Snackbar.LENGTH_LONG).show();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Snackbar.make(recyclerView, "退出群組失敗", Snackbar.LENGTH_LONG).show();
                         }
                     });
         }
@@ -272,9 +199,9 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
     class JoiningMemberAdapter extends RecyclerView.Adapter<JoiningMemberAdapter.ViewHolder>
             implements ConfirmDialog.OnConfirmListener{
-        private ArrayList<User> members;
+        private ArrayList<Member> members;
         class TagData {
-            User user;
+            Member member;
             int clickedViewId;
         }
         class ViewHolder extends RecyclerView.ViewHolder {
@@ -288,7 +215,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                 btnDecline = itemView.findViewById(R.id.joining_group_member_decline);
             }
         }
-        JoiningMemberAdapter(ArrayList<User> members) {
+        JoiningMemberAdapter(ArrayList<Member> members) {
             this.members = members;
         }
 
@@ -302,17 +229,17 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
         @Override
         public void onBindViewHolder(@NonNull JoiningMemberAdapter.ViewHolder holder, int position) {
-            final User user = members.get(position);
+            final Member member = members.get(position);
             final TagData tagData = new TagData();
-            tagData.user = user;
-            holder.tvNickname.setText(user.getNickname());
+            tagData.member = member;
+            holder.tvNickname.setText(member.getNickname());
             holder.btnAccept.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     tagData.clickedViewId = v.getId();
                     ConfirmDialog.newInstance(JoiningMemberAdapter.this,
                             "加入群組",
-                            "確定將 " + user.getNickname() + " 加入群組？",
+                            "確定將 " + member.getNickname() + " 加入群組？",
                             tagData)
                             .show(getSupportFragmentManager(), "GroupJoin");
                 }
@@ -323,7 +250,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                     tagData.clickedViewId = v.getId();
                     ConfirmDialog.newInstance(JoiningMemberAdapter.this,
                             "取消加入申請",
-                            "取消 " + user.getNickname() + " 加入群組申請？",
+                            "取消 " + member.getNickname() + " 加入群組申請？",
                             tagData)
                             .show(getSupportFragmentManager(), "GroupJoinCancel");
                 }
@@ -340,37 +267,42 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
             final TagData data = (TagData) tag;
             switch (data.clickedViewId) {
                 case R.id.joining_group_member_accept:
-                    acceptJoinGroup(data.user);
+                    acceptJoinGroup(data.member);
                     break;
                 case R.id.joining_group_member_decline:
-                    declineJoinGroup(data.user);
+                    declineJoinGroup(data.member);
                     break;
             }
         }
 
-        private void acceptJoinGroup(final User user) {
-            membersRef.child(user.getUid()).child("isJoined").setValue(true)
+        private void acceptJoinGroup(Member member) {
+            Clouds.getInstance().acceptJoinGroup(group, member.getUid())
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            Fdb.getInstance().getUserGroupRef(user.getUid(), group.getId())
-                                    .setValue(true)
-                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-                                            Snackbar.make(recyclerView, "加入群組成功", Snackbar.LENGTH_LONG).show();
-                                        }
-                                    });
+                            Snackbar.make(recyclerView, "加入群組成功", Snackbar.LENGTH_LONG).show();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Snackbar.make(recyclerView, "加入群組失敗", Snackbar.LENGTH_LONG).show();
                         }
                     });
         }
 
-        private void declineJoinGroup(final User user) {
-            membersRef.child(user.getUid()).removeValue()
+        private void declineJoinGroup(Member member) {
+            Clouds.getInstance().declineJoinGroup(group.getId(), member.getUid())
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
                             Snackbar.make(recyclerView, "已取消加入申請", Snackbar.LENGTH_LONG).show();
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Snackbar.make(recyclerView, "取消加入申請失敗", Snackbar.LENGTH_LONG).show();
                         }
                     });
         }
