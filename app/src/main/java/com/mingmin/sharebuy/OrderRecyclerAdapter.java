@@ -14,15 +14,14 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.firebase.ui.database.FirebaseRecyclerAdapter;
-import com.firebase.ui.database.FirebaseRecyclerOptions;
-import com.google.firebase.database.Query;
-import com.mingmin.sharebuy.cloud.Member;
-import com.mingmin.sharebuy.cloud.Order;
+import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
+import com.firebase.ui.firestore.FirestoreRecyclerOptions;
+import com.firebase.ui.firestore.SnapshotParser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.cloud.OrderDoc;
 
-import java.util.HashMap;
-
-public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> implements PopupMenu.OnMenuItemClickListener {
+public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> implements PopupMenu.OnMenuItemClickListener {
     class OrderHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
         TextView tvName;
@@ -70,24 +69,29 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
     private Context context;
     private String[] coinUnits;
     private String[] orderStatus;
-    private User user;
-    private HashMap<String, Member> members;
+    private Group group;
     private OrderRecyclerAdapterListener listener;
 
-    private OrderRecyclerAdapter(@NonNull FirebaseRecyclerOptions<Order> options) {
+    private OrderRecyclerAdapter(@NonNull FirestoreRecyclerOptions<Order> options) {
         super(options);
     }
 
-    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Query query, User user, HashMap<String, Member> members) {
-        this(new FirebaseRecyclerOptions.Builder<Order>()
-                .setQuery(query, Order.class)
+    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Query query, Group group) {
+        this(new FirestoreRecyclerOptions.Builder<Order>()
+                .setQuery(query, new SnapshotParser<Order>() {
+                    @NonNull
+                    @Override
+                    public Order parseSnapshot(@NonNull DocumentSnapshot snapshot) {
+                        OrderDoc orderDoc = snapshot.toObject(OrderDoc.class);
+                        return new Order(snapshot.getId(), orderDoc);
+                    }
+                })
                 .build());
         this.context = context;
         this.listener = listener;
         coinUnits = context.getResources().getStringArray(R.array.coin_units);
         orderStatus = context.getResources().getStringArray(R.array.order_status);
-        this.user = user;
-        this.members = members;
+        this.group = group;
     }
 
     @NonNull
@@ -103,7 +107,7 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listener.onOrderItemViewClicked(order, members);
+                listener.onOrderItemViewClicked(order, group);
             }
         });
         holder.tvName.setText(order.getName());
@@ -112,11 +116,8 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
         holder.tvCount.setText(String.valueOf(order.getBuyCount()));
         holder.calculateAmount();
         holder.tvCoinUnit.setText(coinUnits[order.getCoinUnit()]);
-        String nickname = getNickname(order);
-        if (nickname != null) {
-            String status = nickname + orderStatus[order.getState()];
-            holder.tvStatus.setText(status);
-        }
+        String status = getNickname(order) + orderStatus[order.getState()];
+        holder.tvStatus.setText(status);
 
         RequestOptions requestOptions = new RequestOptions()
                 .centerCrop()
@@ -130,24 +131,11 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
     }
 
     private String getNickname(Order order) {
-        String nickname = null;
-        switch (order.getState()) {
-            case Order.STATE_CREATE:
-                nickname = members.get(order.getCreatorUid()).getNickname();
-                break;
-            case Order.STATE_TAKE:
-                nickname = members.get(order.getTakerUid()).getNickname();
-                break;
-            case Order.STATE_END:
-                nickname = members.get(order.getTakerUid()).getNickname();
-                break;
-            case Order.STATE_CANCEL:
-                if (order.getTakerUid() == null) {
-                    nickname = members.get(order.getCreatorUid()).getNickname();
-                } else {
-                    nickname = members.get(order.getTakerUid()).getNickname();
-                }
-                break;
+        String nickname;
+        if (order.getTakerUid() == null) {
+            nickname = group.searchNicknameByUid(order.getCreatorUid());
+        } else {
+            nickname = group.searchNicknameByUid(order.getTakerUid());
         }
         return nickname;
     }
@@ -164,6 +152,6 @@ public class OrderRecyclerAdapter extends FirebaseRecyclerAdapter<Order, OrderRe
     }
 
     public interface OrderRecyclerAdapterListener {
-        void onOrderItemViewClicked(Order order, HashMap<String, Member> members);
+        void onOrderItemViewClicked(Order order, Group group);
     }
 }

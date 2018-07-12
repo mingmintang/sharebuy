@@ -9,6 +9,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,20 +21,18 @@ import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
-import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.Query;
 import com.mingmin.sharebuy.cloud.CloudActions;
 import com.mingmin.sharebuy.cloud.Clouds;
-import com.mingmin.sharebuy.cloud.Member;
-import com.mingmin.sharebuy.cloud.Order;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupListener,
         PopupMenu.OnMenuItemClickListener, JoinGroupDialog.JoinGroupListener,
@@ -45,7 +44,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     private Spinner spinner;
     private Group currentGroup;
     private PopupMenu popupMenu;
-    private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> recyclerAdapter;
+    private FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> recyclerAdapter;
     private RecyclerView recyclerView;
     private ImageButton ibManage;
 
@@ -250,7 +249,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 currentGroup = groups.get(position);
-//                setupRecyclerView(group);
+                setupRecyclerView();
                 if (currentGroup.getFounderUid().equals(user.getUid())) {
                     ibManage.setEnabled(true);
                     ibManage.setImageResource(R.drawable.ic_group_setting);
@@ -277,38 +276,45 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
         });
     }
 
-    private void setupRecyclerView(Group group) {
-//        final Query query = fdb.getGroupOrdersRef(group.getId())
-//                .orderByChild("nCreateTime")
-//                .limitToFirst(30);
-//
-//        CloudActions.readGroupMembers(group.getId()).addOnSuccessListener(new OnSuccessListener<HashMap<String, Member>>() {
-//            @Override
-//            public void onSuccess(HashMap<String, Member> members) {
-//                recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, query, user, members);
-//                recyclerView.setAdapter(recyclerAdapter);
-//                recyclerAdapter.startListening();
-//            }
-//        });
+    private void setupRecyclerView() {
+        Clouds.getInstance().getJoinedGroupMembers(currentGroup.getId())
+                .addOnSuccessListener(new OnSuccessListener<ArrayList<Member>>() {
+                    @Override
+                    public void onSuccess(ArrayList<Member> members) {
+                        currentGroup.setMembers(members);
+                        Query query = Clouds.getInstance().getGroupOrdersQuery(currentGroup.getId());
+                        recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, query, currentGroup);
+                        recyclerView.setAdapter(recyclerAdapter);
+                        recyclerAdapter.startListening();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "onFailure: " + e.getMessage());
+                    }
+                });
     }
 
     @Override
-    public void onOrderItemViewClicked(Order order, HashMap<String, Member> members) {
-        BuyOrderDialog.newInstance(this, order, members)
+    public void onOrderItemViewClicked(Order order, Group group) {
+        BuyOrderDialog.newInstance(this, order, group)
                 .show(getFragmentManager(), "buyOrderDialog");
     }
 
     @Override
     public void onBuyOrderConfirm(Order order, int buyCount) {
-        CloudActions.getInstance().buyGroupOrder(currentGroup.getId(), order.getId(), user.getUid(), buyCount)
-                .addOnSuccessListener(new OnSuccessListener<Boolean>() {
+        Clouds.getInstance().buyGroupOrder(currentGroup.getId(), order.getId(), user.getUid(), buyCount)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(Boolean aBoolean) {
-                        if (aBoolean) {
-                            Snackbar.make(recyclerView, "購買成功", Snackbar.LENGTH_LONG).show();
-                        } else {
-                            Snackbar.make(recyclerView, "購買失敗", Snackbar.LENGTH_LONG).show();
-                        }
+                    public void onSuccess(Void aVoid) {
+                        Snackbar.make(recyclerView, "購買成功", Snackbar.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Snackbar.make(recyclerView, "購買失敗", Snackbar.LENGTH_LONG).show();
                     }
                 });
     }

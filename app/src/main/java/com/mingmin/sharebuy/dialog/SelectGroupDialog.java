@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,21 +15,20 @@ import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
-import com.mingmin.sharebuy.cloud.Group;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.R;
-import com.mingmin.sharebuy.cloud.Fdb;
+import com.mingmin.sharebuy.cloud.Clouds;
 
 import java.util.ArrayList;
 
 public class SelectGroupDialog extends AppCompatDialogFragment {
+    private final String TAG = getClass().getSimpleName();
     private String title;
     private String uid;
     private SelectGroupListener listener;
     private Object tag;
-    private ArrayList<Group> groups = new ArrayList<>();
     private RecyclerView recyclerView;
     private Button btnConfirm;
 
@@ -61,7 +61,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
             @Override
             public void onClick(View v) {
                 GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
-                listener.onSelectGroupConfirm(groups.get(adapter.getSelectedPosition()), tag);
+                listener.onSelectGroupConfirm(adapter.getSelectedGroup(), tag);
                 dialog.dismiss();
             }
         });
@@ -84,39 +84,18 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         };
         recyclerView.setLayoutManager(llm);
 
-        Fdb.getInstance().getUserGroupsRef(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+        Clouds.getInstance().getUserGroups(uid)
+                .addOnSuccessListener(new OnSuccessListener<ArrayList<Group>>() {
                     @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        final long count = dataSnapshot.getChildrenCount();
-                        groups.clear();
-                        if (count == 0) {
-                            recyclerView.setAdapter(new GroupAdapter(groups));
-                            return;
-                        }
-                        for (DataSnapshot childSnap : dataSnapshot.getChildren()) {
-                            Fdb.getInstance().getGroupRef(childSnap.getKey())
-                                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                                        @Override
-                                        public void onDataChange(DataSnapshot dataSnapshot) {
-                                            Group group = dataSnapshot.getValue(Group.class);
-                                            groups.add(group);
-                                            if (groups.size() == count) {
-                                                recyclerView.setAdapter(new GroupAdapter(groups));
-                                                btnConfirm.setEnabled(true);
-                                            }
-                                        }
-
-                                        @Override
-                                        public void onCancelled(DatabaseError databaseError) {
-
-                                        }
-                                    });
-                        }
+                    public void onSuccess(ArrayList<Group> groups) {
+                        recyclerView.setAdapter(new GroupAdapter(groups));
+                        btnConfirm.setEnabled(true);
                     }
-
+                })
+                .addOnFailureListener(new OnFailureListener() {
                     @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "onFailure: " + e.getMessage());
                     }
                 });
     }
@@ -138,8 +117,8 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         private ArrayList<Group> groups;
         private int selectedPosition = 0;
 
-        public int getSelectedPosition() {
-            return selectedPosition;
+        public Group getSelectedGroup() {
+            return groups.get(selectedPosition);
         }
 
         GroupAdapter(ArrayList<Group> groups) {
@@ -155,22 +134,10 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            Fdb.getInstance().getUserNicknameRef(group.getFounderUid())
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            String nickname = (String) dataSnapshot.getValue();
-                            if (nickname != null) {
-                                holder.tvFounderName.setText(nickname);
-                            }
-                        }
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                        }
-                    });
+            holder.tvFounderName.setText(group.getFounderNickname());
             holder.radioButton.setChecked(selectedPosition == position);
             holder.itemView.setTag(position);
         }

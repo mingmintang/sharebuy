@@ -1,31 +1,25 @@
 package com.mingmin.sharebuy;
 
-import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
-import com.mingmin.sharebuy.cloud.Fdb;
-import com.mingmin.sharebuy.cloud.Group;
-import com.mingmin.sharebuy.cloud.Order;
+import com.mingmin.sharebuy.cloud.Clouds;
+import com.mingmin.sharebuy.cloud.OrderDoc;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.SelectGroupDialog;
 import com.mingmin.sharebuy.fragment.EditOrderFragment;
 import com.mingmin.sharebuy.fragment.SelectOrderImageFragment;
-
-import java.io.File;
 
 public class AddOrderActivity extends AppCompatActivity implements
         SelectOrderImageFragment.OnFragmentInteractionListener,
@@ -37,18 +31,16 @@ public class AddOrderActivity extends AppCompatActivity implements
     private Button btnEndOrder;
     private Button ibPrevious;
     private Button ibNext;
-    private String uid;
+    private String creatorUid;
     private EditOrderFragment editOrderFragment;
     private String imagePath;
-    private Fdb fdb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_order);
 
-        uid = getIntent().getStringExtra("USER_UID");
-        fdb = Fdb.getInstance();
+        creatorUid = getIntent().getStringExtra("CREATOR_UID");
         initViews();
     }
 
@@ -110,11 +102,6 @@ public class AddOrderActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onEditOrderCompleted(Order order) {
-
-    }
-
-    @Override
     public void onCountEqualZero() {
         if (btnAskFor.isEnabled()) {
             btnAskFor.setEnabled(false);
@@ -144,10 +131,8 @@ public class AddOrderActivity extends AppCompatActivity implements
         switchVisibleByPage(position);
         switch (position) {
             case 0:
-                Log.d("wwwww", "onPageSelected: 0");
                 break;
             case 1:
-                Log.d("wwwww", "onPageSelected: 1");
                 editOrderFragment.setImagePath(imagePath);
                 break;
         }
@@ -163,10 +148,10 @@ public class AddOrderActivity extends AppCompatActivity implements
         String action = (String) tag;
         switch (action) {
             case "askForHelpBuy":
-//                buildCreateOrder(group);
+                buildNewOrder(Order.STATE_CREATE, group.getId());
                 break;
             case "helpBuy":
-                buildTakeOrder(group);
+                buildNewOrder(Order.STATE_TAKE, group.getId());
                 break;
         }
     }
@@ -176,109 +161,29 @@ public class AddOrderActivity extends AppCompatActivity implements
         String action = (String) tag;
         switch (action) {
             case "endOrder":
-                buildEndOrder();
+                buildNewOrder(Order.STATE_END, null);
                 break;
         }
     }
 
-    private void buildCreateOrder(Group group) {
-        final Order order = editOrderFragment.getOrder();
-        order.setCreatorUid(uid);
-        order.setGroupId(group.getId());
-        order.setState(Order.STATE_CREATE);
-
-        String imagePath = order.getImagePath();
-        String fileName = imagePath.substring(imagePath.lastIndexOf("/"));
-        StorageReference storageReference = FirebaseStorage.getInstance()
-                .getReference(fileName);
-        storageReference.putFile(Uri.fromFile(new File(imagePath)))
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+    private void buildNewOrder(int orderState, @Nullable String groupId) {
+        OrderDoc orderDoc = editOrderFragment.getOrderDoc();
+        Clouds.getInstance().buildNewOrder(orderState, imagePath, creatorUid, orderDoc, groupId)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
-                        order.setImageUrl(imageUrl);
-
-                        DatabaseReference orderRef = fdb.getGroupOrdersRef(order.getGroupId());
-                        String orderId = orderRef.push().getKey();
-                        order.setId(orderId);
-                        orderRef.child(orderId).setValue(order)
-                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                setResult(RESULT_OK);
-                                finish();
-                            }
-                        });
+                    public void onSuccess(Void aVoid) {
+                        setResult(RESULT_OK);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        setResult(RESULT_CANCELED);
+                        finish();
                     }
                 });
     }
-
-    private void buildTakeOrder(Group group) {
-        final Order order = editOrderFragment.getOrder();
-        order.setCreatorUid(uid);
-        order.setTakerUid(uid);
-        order.setGroupId(group.getId());
-        order.setState(Order.STATE_TAKE);
-
-        String imagePath = order.getImagePath();
-        String fileName = imagePath.substring(imagePath.lastIndexOf("/"));
-        StorageReference storageReference = FirebaseStorage.getInstance()
-                .getReference(fileName);
-        storageReference.putFile(Uri.fromFile(new File(imagePath)))
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
-                        order.setImageUrl(imageUrl);
-
-                        DatabaseReference orderRef = fdb.getGroupOrdersRef(order.getGroupId());
-                        String orderId = orderRef.push().getKey();
-                        order.setId(orderId);
-                        orderRef.child(orderId).setValue(order)
-                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                    @Override
-                                    public void onSuccess(Void aVoid) {
-                                        setResult(RESULT_OK);
-                                        finish();
-                                    }
-                                });
-                    }
-                });
-    }
-
-    private void buildEndOrder() {
-        final Order order = editOrderFragment.getOrder();
-        order.setCreatorUid(uid);
-        order.setTakerUid(uid);
-        order.setEndTime(System.currentTimeMillis());
-        order.setState(Order.STATE_END);
-
-        String imagePath = order.getImagePath();
-        String fileName = imagePath.substring(imagePath.lastIndexOf("/"));
-        StorageReference storageReference = FirebaseStorage.getInstance()
-                .getReference(fileName);
-        storageReference.putFile(Uri.fromFile(new File(imagePath)))
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        String imageUrl = taskSnapshot.getMetadata().getReference().getDownloadUrl().toString();
-                        order.setImageUrl(imageUrl);
-
-                        DatabaseReference orderRef = fdb.getUserOrdersRef(order.getTakerUid());
-                        String orderId = orderRef.push().getKey();
-                        order.setId(orderId);
-                        orderRef.child(orderId).setValue(order)
-                                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                    @Override
-                                    public void onSuccess(Void aVoid) {
-                                        setResult(RESULT_OK);
-                                        finish();
-                                    }
-                                });
-                    }
-                });
-    }
-
 
     class AddOrderPagerAdapter extends FragmentPagerAdapter {
         AddOrderPagerAdapter(FragmentManager fm) {
@@ -290,7 +195,7 @@ public class AddOrderActivity extends AppCompatActivity implements
                 case 0:
                     return SelectOrderImageFragment.newInstance();
                 case 1:
-                    editOrderFragment = EditOrderFragment.newInstance(uid);
+                    editOrderFragment = EditOrderFragment.newInstance(creatorUid);
                     return editOrderFragment;
             }
             return null;
@@ -302,12 +207,12 @@ public class AddOrderActivity extends AppCompatActivity implements
     }
 
     public void askForHelpBuy(View view) {
-        SelectGroupDialog.newInstance("選擇群組找人幫買", uid, this, "askForHelpBuy")
+        SelectGroupDialog.newInstance("選擇群組找人幫買", creatorUid, this, "askForHelpBuy")
                 .show(getSupportFragmentManager(), "askForHelpBuy");
     }
 
     public void helpBuy(View view) {
-        SelectGroupDialog.newInstance("選擇群組幫買東西", uid, this, "helpBuy")
+        SelectGroupDialog.newInstance("選擇群組幫買東西", creatorUid, this, "helpBuy")
                 .show(getSupportFragmentManager(), "helpBuy");
     }
 

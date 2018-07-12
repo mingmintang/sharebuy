@@ -5,32 +5,27 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
-import com.mingmin.sharebuy.cloud.Fdb;
-import com.mingmin.sharebuy.cloud.Group;
-import com.mingmin.sharebuy.cloud.Member;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.mingmin.sharebuy.cloud.Clouds;
 
 import java.util.ArrayList;
 
 public class GroupInfoActivity extends AppCompatActivity {
-
-    private DatabaseReference membersRef;
-    private ValueEventListener membersValueEventListener;
+    private final String TAG = getClass().getSimpleName();
+    private Group group;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_info);
 
-        Group group = (Group) getIntent().getSerializableExtra("group");
-        membersRef = Fdb.getInstance().getGroupMembersRef(group.getId());
+        group = (Group) getIntent().getSerializableExtra("group");
 
         TextView tvSearchCode = findViewById(R.id.group_info_searchCode);
         tvSearchCode.setText(String.valueOf(group.getSearchCode()));
@@ -42,42 +37,19 @@ public class GroupInfoActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView(final RecyclerView recyclerView) {
-        membersValueEventListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                final ArrayList<Member> members = new ArrayList<>();
-                final long childCount = dataSnapshot.getChildrenCount();
-                if (childCount == 0) {
-                    recyclerView.setAdapter(new MembersAdapter(members));
-                    return;
-                }
-                for (DataSnapshot childSnap : dataSnapshot.getChildren()) {
-                    Member member = dataSnapshot.getValue(Member.class);
-                    members.add(member);
-                    if (members.size() == childCount) {
+        Clouds.getInstance().getJoinedGroupMembers(group.getId())
+                .addOnSuccessListener(new OnSuccessListener<ArrayList<Member>>() {
+                    @Override
+                    public void onSuccess(ArrayList<Member> members) {
                         recyclerView.setAdapter(new MembersAdapter(members));
                     }
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        membersRef.orderByChild("isJoined").equalTo(true)
-                .addValueEventListener(membersValueEventListener);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        membersRef.removeEventListener(membersValueEventListener);
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: " + e.getMessage());
+                    }
+                });
     }
 
     @Override

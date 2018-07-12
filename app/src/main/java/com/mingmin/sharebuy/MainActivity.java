@@ -26,7 +26,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.mingmin.sharebuy.cloud.Clouds;
-import com.mingmin.sharebuy.cloud.Group;
 
 import java.util.Arrays;
 
@@ -37,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         GroupFragment.OnFragmentInteractionListener {
 
     public static final int RC_SIGN_IN = 1;
-    public static final int RC_ADD_ITEM = 2;
+    public static final int RC_ADD_ORDER = 2;
     public static final int RC_EDIT_PROFILE = 3;
     public static final int RC_GROUP_MANAGE = 4;
     public static final int RC_GROUP_INFO = 5;
@@ -68,8 +67,8 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, AddOrderActivity.class);
-                intent.putExtra("USER_UID", fuser.getUid());
-                startActivityForResult(intent, RC_ADD_ITEM);
+                intent.putExtra("CREATOR_UID", fuser.getUid());
+                startActivityForResult(intent, RC_ADD_ORDER);
             }
         });
 
@@ -273,6 +272,14 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             case RC_SIGN_IN:
                 if (resultCode == RESULT_OK) {
                     initAfterSignIn();
+                }
+                break;
+            case RC_ADD_ORDER:
+                if (resultCode == RESULT_OK) {
+                    Snackbar.make(navigationView, "建立訂單成功", Snackbar.LENGTH_LONG).show();
+                }
+                if (resultCode == RESULT_CANCELED) {
+                    Snackbar.make(navigationView, "建立訂單失敗", Snackbar.LENGTH_LONG).show();
                 }
                 break;
             case RC_EDIT_PROFILE:

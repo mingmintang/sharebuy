@@ -2,10 +2,12 @@ package com.mingmin.sharebuy;
 
 import com.mingmin.sharebuy.cloud.MemberDoc;
 
+import java.io.Serializable;
+
 /**
  * Group member, exclude group founder
  */
-public class Member {
+public class Member implements Serializable {
     private String uid;
     private String nickname;
 

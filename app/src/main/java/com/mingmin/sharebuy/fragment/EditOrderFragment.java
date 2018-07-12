@@ -16,14 +16,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.mingmin.sharebuy.cloud.Buyer;
-import com.mingmin.sharebuy.cloud.Order;
+import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.cloud.BuyerDoc;
+import com.mingmin.sharebuy.cloud.OrderDoc;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class EditOrderFragment extends Fragment {
-    private Order order;
     private String uid;
 
     private OnFragmentInteractionListener mListener;
@@ -37,6 +38,7 @@ public class EditOrderFragment extends Fragment {
     private TextView tvAmount;
     private TextWatcher priceNumberTextWatcher;
     private TextWatcher countNumberTextWatcher;
+    private TextWatcher maxBuyCountTextWatcher;
 
     public EditOrderFragment() {
         // Required empty public constructor
@@ -147,36 +149,34 @@ public class EditOrderFragment extends Fragment {
     }
 
     public interface OnFragmentInteractionListener {
-        void onEditOrderCompleted(Order order);
         void onCountEqualZero();
         void onCountGreaterThanZero();
     }
 
     public void setImagePath(String imagePath) {
-        order = new Order(imagePath);
         Glide.with(this)
-                .load(new File(order.getImagePath()))
+                .load(new File(imagePath))
                 .into(imageView);
     }
 
-    public Order getOrder() {
-        order.setName(etName.getText().toString());
-        order.setDesc(etDesc.getText().toString());
+    public OrderDoc getOrderDoc() {
+        OrderDoc orderDoc = new OrderDoc();
+        orderDoc.setName(etName.getText().toString());
+        orderDoc.setDesc(etDesc.getText().toString());
         String priceStr = etPrice.getText().toString();
         if (!TextUtils.isEmpty(priceStr)) {
-            order.setPrice(Integer.parseInt(priceStr));
+            orderDoc.setPrice(Integer.parseInt(priceStr));
         }
-        order.setCoinUnit(coinUnitSpinner.getSelectedItemPosition());
+        orderDoc.setCoinUnit(coinUnitSpinner.getSelectedItemPosition());
         String countStr = etCount.getText().toString();
         if (!TextUtils.isEmpty(countStr)) {
             int count = Integer.parseInt(countStr);
-            Buyer buyer = new Buyer(uid, count, count);
-            order.addBuyer(buyer);
+            orderDoc.setBuyCount(count);
         }
         String maxBuyCountStr = etMaxBuyCount.getText().toString();
         if (!TextUtils.isEmpty(maxBuyCountStr)) {
-            order.setMaxBuyCount(Integer.parseInt(maxBuyCountStr));
+            orderDoc.setMaxBuyCount(Integer.parseInt(maxBuyCountStr));
         }
-        return order;
+        return orderDoc;
     }
 }

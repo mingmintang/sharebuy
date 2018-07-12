@@ -11,8 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
-import com.mingmin.sharebuy.cloud.Member;
-import com.mingmin.sharebuy.cloud.Order;
 
 import java.util.HashMap;
 
@@ -103,7 +101,7 @@ public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.
     }
 
     @Override
-    public void onOrderItemViewClicked(Order order, HashMap<String, Member> members) {
+    public void onOrderItemViewClicked(Order order, Group group) {
 
     }
 }

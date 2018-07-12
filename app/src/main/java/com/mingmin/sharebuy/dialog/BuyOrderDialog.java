@@ -3,12 +3,14 @@ package com.mingmin.sharebuy.dialog;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -17,36 +19,34 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.mingmin.sharebuy.cloud.Buyer;
-import com.mingmin.sharebuy.cloud.Member;
-import com.mingmin.sharebuy.cloud.Order;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.mingmin.sharebuy.Buyer;
+import com.mingmin.sharebuy.Group;
+import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.utils.InputFilterMinMax;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 
 public class BuyOrderDialog extends AppCompatDialogFragment {
+    private final String TAG = getClass().getSimpleName();
     private BuyOrderListener listener;
     private Order order;
-    private HashMap<String, Member> members;
+    private Group group;
     private TextView tvAmount;
-    private String buyerListResult;
-    private int hasBoughtCount;
 
-    public static BuyOrderDialog newInstance(BuyOrderListener listener, Order order, HashMap<String, Member> members) {
+    public static BuyOrderDialog newInstance(BuyOrderListener listener, Order order, Group group) {
         BuyOrderDialog fragment = new BuyOrderDialog();
         fragment.listener = listener;
         fragment.order = order;
-        fragment.members = members;
+        fragment.group = group;
         return fragment;
     }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        initBuyerList(members);
         View view = LayoutInflater.from(getContext())
                 .inflate(R.layout.dialog_buy_order, null, false);
         AlertDialog dialog = new AlertDialog.Builder(getContext())
@@ -54,6 +54,7 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
                 .create();
         dialog.getWindow().setWindowAnimations(R.style.dialog_animation_up);
         initView(view, dialog);
+        initBuyerList(view);
         return dialog;
     }
 
@@ -81,10 +82,7 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
         TextView tvDesc = view.findViewById(R.id.buy_order_desc);
         tvDesc.setText(order.getDesc());
 
-        TextView tvBuyerList = view.findViewById(R.id.buy_order_buyer_list);
-        tvBuyerList.setText(buyerListResult);
-
-        final int maxBuyCount = (order.getMaxBuyCount() == -1) ? -1 : (order.getMaxBuyCount() - hasBoughtCount);
+        final int maxBuyCount = (order.getMaxBuyCount() == -1) ? -1 : (order.getMaxBuyCount() - order.getBuyCount());
         int minBuyCount = (maxBuyCount == 0) ? 0 : 1;
 
         tvAmount = view.findViewById(R.id.buy_order_amount);
@@ -158,31 +156,32 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
         this.tvAmount.setText(String.valueOf(amount));
     }
 
-    private void initBuyerList(HashMap<String, Member> members) {
-        hasBoughtCount = 0;
-        buyerListResult = "";
-        HashMap<String, Buyer> map = (HashMap<String, Buyer>) order.getBuyers();
-        if (map.size() == 0) {
-            return;
-        }
-        ArrayList<Buyer> buyers = new ArrayList<>(map.values());
-        Collections.sort(buyers, new Comparator<Buyer>() {
-            @Override
-            public int compare(Buyer o1, Buyer o2) {
-                return (int) (o1.getOrderTime() - o2.getOrderTime());
-            }
-        });
-        StringBuffer sb = new StringBuffer();
-        for (Buyer buyer : buyers) {
-            hasBoughtCount += buyer.getBuyCount();
-            sb.append(members.get(buyer.getUid()).getNickname())
-                    .append(" +")
-                    .append(buyer.getBuyCount())
-                    .append(" = ")
-                    .append(order.getPrice() * buyer.getBuyCount())
-                    .append("\n");
-        }
-        buyerListResult = sb.toString();
+    private void initBuyerList(View view) {
+        final TextView tvBuyerList = view.findViewById(R.id.buy_order_buyer_list);
+        Clouds.getInstance().getGroupOrderBuyers(group.getId(), order.getId())
+                .addOnSuccessListener(new OnSuccessListener<ArrayList<Buyer>>() {
+                    @Override
+                    public void onSuccess(ArrayList<Buyer> buyers) {
+                        if (buyers.size() > 0) {
+                            StringBuffer sb = new StringBuffer();
+                            for (Buyer buyer : buyers) {
+                                sb.append(group.searchNicknameByUid(buyer.getUid()))
+                                        .append(" +")
+                                        .append(buyer.getBuyCount())
+                                        .append(" = ")
+                                        .append(order.getPrice() * buyer.getBuyCount())
+                                        .append("\n");
+                            }
+                            tvBuyerList.setText(sb.toString());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "onFailure: " + e.getMessage());
+                    }
+                });
     }
 
     public interface BuyOrderListener {

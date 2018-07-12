@@ -1,23 +1,28 @@
 package com.mingmin.sharebuy.cloud;
 
+import android.support.annotation.NonNull;
+
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.Transaction;
 import com.google.firebase.firestore.WriteBatch;
+import com.jph.takephoto.model.TResult;
 
-public class Fs {
-    private static Fs instance;
+public class Firestore {
+    private static Firestore instance;
     private final FirebaseFirestore db;
 
-    public static Fs getInstance() {
+    public static Firestore getInstance() {
         if (instance == null) {
-            instance = new Fs();
+            instance = new Firestore();
         }
         return instance;
     }
 
-    public Fs() {
+    public Firestore() {
         db = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
                 .setPersistenceEnabled(true)
@@ -27,6 +32,10 @@ public class Fs {
 
     public WriteBatch getWriteBatch() {
         return db.batch();
+    }
+
+    public <TResult> Task<TResult> runTransaction(@NonNull final Transaction.Function<TResult> updateFunction) {
+        return db.runTransaction(updateFunction);
     }
 
     public CollectionReference getUsersCol() {
@@ -63,5 +72,29 @@ public class Fs {
 
     public CollectionReference getRequestJoinGroupCol(String groupId) {
         return getGroupDoc(groupId).collection("requestJoin");
+    }
+
+    public CollectionReference getGroupOrdersCol(String groupId) {
+        return getGroupDoc(groupId).collection("orders");
+    }
+
+    public DocumentReference getGroupOrderDoc(String groupId, String orderId) {
+        return getGroupOrdersCol(groupId).document(orderId);
+    }
+
+    public CollectionReference getGroupOrderBuyersCol(String groupId, String orderId) {
+        return getGroupOrderDoc(groupId, orderId).collection("buyers");
+    }
+
+    public DocumentReference getGroupOrderBuyerDoc(String groupId, String orderId, String uid) {
+        return getGroupOrderBuyersCol(groupId, orderId).document(uid);
+    }
+
+    public CollectionReference getUserOrdersCol(String uid) {
+        return getUserDoc(uid).collection("orders");
+    }
+
+    public DocumentReference getUserOrderDoc(String uid, String orderId) {
+        return getUserOrdersCol(uid).document(orderId);
     }
 }
