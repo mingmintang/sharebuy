@@ -6,27 +6,38 @@ import java.util.Date;
 
 public class Buyer {
     private String uid;
+    private String name;
     private int orderCount;
     private Date orderTime;
     private int buyCount;
 
+    public Buyer(String uid, String name, int buyCount) {
+        this.uid = uid;
+        this.name = name;
+        this.buyCount = buyCount;
+    }
+
     public Buyer(String uid, BuyerDoc buyerDoc) {
         this.uid = uid;
-        setBuyerDoc(buyerDoc);
+        setupValues(buyerDoc);
     }
 
-    private void updateValues(BuyerDoc buyerDoc) {
+    private void setupValues(BuyerDoc buyerDoc) {
+        name = buyerDoc.getName();
         orderCount = buyerDoc.getOrderCount();
-        orderTime = buyerDoc.getOrderTime();
         buyCount = buyerDoc.getBuyCount();
-    }
-
-    public void setBuyerDoc(BuyerDoc buyerDoc) {
-        updateValues(buyerDoc);
     }
 
     public String getUid() {
         return uid;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getOrderCount() {

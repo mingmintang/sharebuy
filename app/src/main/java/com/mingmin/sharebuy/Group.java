@@ -1,42 +1,57 @@
 package com.mingmin.sharebuy;
 
 import com.mingmin.sharebuy.cloud.GroupDoc;
+import com.mingmin.sharebuy.cloud.MemberDoc;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 public class Group implements Serializable {
-    private GroupDoc groupDoc;
     private String id;
     private String name;
-    private String founderUid;
-    private String founderNickname;
-    private Date createdTime;
+    private String managerUid;
+    private String managerName;
+    private Date createTime;
+    private Date joinTime;
     private int searchCode;
     private ArrayList<Member> members;
+    private String myName;
+
+    public Group(String id, String name, String managerName) {
+        this.id = id;
+        this.name = name;
+        this.managerName = managerName;
+    }
+
+    public Group(String id, String name, String managerUid, String managerName) {
+        this.id = id;
+        this.name = name;
+        this.managerUid = managerUid;
+        this.managerName = managerName;
+    }
+
+    public Group(String id, String name, String managerUid, String managerName, String myName) {
+        this.id = id;
+        this.name = name;
+        this.managerUid = managerUid;
+        this.managerName = managerName;
+        this.myName = myName;
+    }
 
     public Group(String id, GroupDoc groupDoc) {
         this.id = id;
-        setGroupDoc(groupDoc);
         members = new ArrayList<>();
+        setupValues(groupDoc);
     }
 
-    private void updateValues(GroupDoc groupDoc) {
-        setName(groupDoc.getName());
-        setFounderUid(groupDoc.getFounderUid());
-        setFounderNickname(groupDoc.getFounderNickname());
-        setCreatedTime(groupDoc.getCreateTime());
-        setSearchCode(groupDoc.getSearchCode());
-    }
-
-    public GroupDoc getGroupDoc() {
-        return groupDoc;
-    }
-
-    public void setGroupDoc(GroupDoc groupDoc) {
-        this.groupDoc = groupDoc;
-        updateValues(groupDoc);
+    private void setupValues(GroupDoc groupDoc) {
+        name = groupDoc.getName();
+        managerUid = groupDoc.getManagerUid();
+        managerName = groupDoc.getManagerName();
+        createTime = groupDoc.getCreateTime();
+        searchCode = groupDoc.getSearchCode();
     }
 
     public String getId() {
@@ -55,36 +70,32 @@ public class Group implements Serializable {
         this.name = name;
     }
 
-    public String getFounderUid() {
-        return founderUid;
+    public String getManagerUid() {
+        return managerUid;
     }
 
-    public void setFounderUid(String founderUid) {
-        this.founderUid = founderUid;
+    public void setManagerUid(String managerUid) {
+        this.managerUid = managerUid;
     }
 
-    public String getFounderNickname() {
-        return founderNickname;
+    public String getManagerName() {
+        return managerName;
     }
 
-    public void setFounderNickname(String founderNickname) {
-        this.founderNickname = founderNickname;
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
     }
 
-    public Date getCreatedTime() {
-        return createdTime;
+    public Date getCreateTime() {
+        return createTime;
     }
 
-    public void setCreatedTime(Date createdTime) {
-        this.createdTime = createdTime;
+    public Date getJoinTime() {
+        return joinTime;
     }
 
     public int getSearchCode() {
         return searchCode;
-    }
-
-    public void setSearchCode(int searchCode) {
-        this.searchCode = searchCode;
     }
 
     public ArrayList<Member> getMembers() {
@@ -95,14 +106,22 @@ public class Group implements Serializable {
         this.members = members;
     }
 
-    public String searchNicknameByUid(String uid) {
-        if (uid.equals(getFounderUid())) {
-            return getFounderNickname();
+    public String getMyName() {
+        return myName;
+    }
+
+    public void setMyName(String myName) {
+        this.myName = myName;
+    }
+
+    public String searchUserNameByUid(String uid) {
+        if (uid.equals(getManagerUid())) {
+            return getManagerName();
         }
         if (members.size() > 0) {
             for (Member member : members) {
                 if (uid.equals(member.getUid())) {
-                    return member.getNickname();
+                    return member.getName();
                 }
             }
         }
@@ -111,6 +130,6 @@ public class Group implements Serializable {
 
     @Override
     public String toString() {
-        return getName() + " (" + getFounderNickname() + ")";
+        return getName() + " (" + getManagerName() + ")";
     }
 }

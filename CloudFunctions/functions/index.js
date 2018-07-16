@@ -34,24 +34,18 @@ const FieldValue = admin.firestore.FieldValue;
 exports.requestJoinGroup = functions.firestore.document('groups/{groupId}/requestJoin/{id}')
 .onCreate((snapshot, context) => {
     const noti = snapshot.data();
-    const memberPromise = usersRef.doc(`${noti.fromUid}`).get();
-    return Promise.all([memberPromise]).then(results => {
-        const nickname = results[0].get('nickname');
-        var member = {
-            nickname: nickname,
-            joined: false
-        }
-        groupsRef.doc(`${noti.groupId}`).collection('members').doc(`${noti.fromUid}`).set(member);
-        return handleNotification(snapshot);
-    });
+    var member = {
+        name: noti.myName
+    }
+    groupsRef.doc(`${noti.groupId}/joining/${noti.fromUid}`).set(member);
+    return handleNotification(snapshot, noti);
 });
 
-function handleNotification(snapshot) {
-    const noti = snapshot.data();
-    const founderRef = usersRef.doc(`${noti.toUid}`);
-    const founderPromise = founderRef.get();
+function handleNotification(snapshot, noti) {
+    const managerRef = usersRef.doc(`${noti.toUid}`);
+    const managerPromise = managerRef.get();
     const removePromise = snapshot.ref.delete();
-    return Promise.all([founderPromise, removePromise]).then(results => {
+    return Promise.all([managerPromise, removePromise]).then(results => {
         const tokensData = results[0].get('tokens');
         const tokens = Object.keys(tokensData);
         const payload = {
@@ -60,7 +54,7 @@ function handleNotification(snapshot) {
                 'groupId' : noti.groupId
             }
         }
-        return sendMessageToDevices(founderRef, tokens, payload);
+        return sendMessageToDevices(managerRef, tokens, payload);
     });
 }
 

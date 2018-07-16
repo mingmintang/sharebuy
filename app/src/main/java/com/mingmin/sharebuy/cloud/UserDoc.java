@@ -4,19 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UserDoc {
-    String nickname;
     Map<String, Boolean> tokens;
 
     public UserDoc() {
         tokens = new HashMap<>();
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
     }
 
     public Map<String, Boolean> getTokens() {

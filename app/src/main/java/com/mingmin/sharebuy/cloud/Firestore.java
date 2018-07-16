@@ -54,20 +54,28 @@ public class Firestore {
         return getUserGroupsCol(uid).document(groupId);
     }
 
+    public CollectionReference getGroupMembersCol(String groupId) {
+        return getGroupDoc(groupId).collection("members");
+    }
+
+    public DocumentReference getGroupMemberDoc(String groupId, String memberUid) {
+        return getGroupMembersCol(groupId).document(memberUid);
+    }
+
+    public CollectionReference getGroupJoiningMembersCol(String groupId) {
+        return getGroupDoc(groupId).collection("joining");
+    }
+
+    public DocumentReference getGroupJoiningMemberDoc(String groupId, String memberUid) {
+        return getGroupJoiningMembersCol(groupId).document(memberUid);
+    }
+
     public CollectionReference getGroupsCol() {
         return db.collection("groups");
     }
 
     public DocumentReference getGroupDoc(String groupId) {
         return getGroupsCol().document(groupId);
-    }
-
-    public CollectionReference getGroupMembersCol(String groupId) {
-        return getGroupDoc(groupId).collection("members");
-    }
-
-    public DocumentReference getGroupMemberDoc(String groupId, String uid) {
-        return getGroupMembersCol(groupId).document(uid);
     }
 
     public CollectionReference getRequestJoinGroupCol(String groupId) {
@@ -86,8 +94,8 @@ public class Firestore {
         return getGroupOrderDoc(groupId, orderId).collection("buyers");
     }
 
-    public DocumentReference getGroupOrderBuyerDoc(String groupId, String orderId, String uid) {
-        return getGroupOrderBuyersCol(groupId, orderId).document(uid);
+    public DocumentReference getGroupOrderBuyerDoc(String groupId, String orderId, String buyerId) {
+        return getGroupOrderBuyersCol(groupId, orderId).document(buyerId);
     }
 
     public CollectionReference getUserOrdersCol(String uid) {

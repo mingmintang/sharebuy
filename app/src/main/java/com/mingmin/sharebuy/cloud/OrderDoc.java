@@ -3,19 +3,15 @@ package com.mingmin.sharebuy.cloud;
 import com.google.firebase.firestore.ServerTimestamp;
 
 import java.util.Date;
+import java.util.HashMap;
 
 public class OrderDoc {
-    public static final int STATE_CREATE = 0;
-    public static final int STATE_TAKE = 1;
-    public static final int STATE_END = 2;
-    public static final int STATE_CANCEL =3;
-
     private int state;
     private int maxBuyCount;
     private int buyCount;
     private String imageUrl;
-    private String creatorUid;
-    private String takerUid;
+    private String managerUid;
+    private String managerName;
     private String name;
     private String desc;
     private String groupId;
@@ -24,15 +20,7 @@ public class OrderDoc {
     private @ServerTimestamp Date createTime;
     private @ServerTimestamp Date endTime = new Date(0);
 
-    public OrderDoc() {
-        initSync();
-    }
-
-    private void initSync() {
-        setState(STATE_CREATE);
-        setMaxBuyCount(0);
-        setBuyCount(0);
-    }
+    public OrderDoc() { }
 
     public int getState() {
         return state;
@@ -66,20 +54,20 @@ public class OrderDoc {
         this.imageUrl = imageUrl;
     }
 
-    public String getCreatorUid() {
-        return creatorUid;
+    public String getManagerUid() {
+        return managerUid;
     }
 
-    public void setCreatorUid(String creatorUid) {
-        this.creatorUid = creatorUid;
+    public void setManagerUid(String managerUid) {
+        this.managerUid = managerUid;
     }
 
-    public String getTakerUid() {
-        return takerUid;
+    public String getManagerName() {
+        return managerName;
     }
 
-    public void setTakerUid(String takerUid) {
-        this.takerUid = takerUid;
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
     }
 
     public String getName() {

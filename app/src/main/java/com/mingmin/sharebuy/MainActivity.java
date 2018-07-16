@@ -37,13 +37,11 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
     public static final int RC_SIGN_IN = 1;
     public static final int RC_ADD_ORDER = 2;
-    public static final int RC_EDIT_PROFILE = 3;
-    public static final int RC_GROUP_MANAGE = 4;
-    public static final int RC_GROUP_INFO = 5;
+    public static final int RC_GROUP_MANAGE = 3;
+    public static final int RC_GROUP_INFO = 4;
     private final String TAG = getClass().getSimpleName();
     private FirebaseUser fuser;
     private DrawerLayout drawer;
-    private TextView tvNickname;
     private TextView tvAccount;
     private NavigationView navigationView;
     private FirebaseAuth firebaseAuth;
@@ -67,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this, AddOrderActivity.class);
-                intent.putExtra("CREATOR_UID", fuser.getUid());
+                intent.putExtra("user", user);
                 startActivityForResult(intent, RC_ADD_ORDER);
             }
         });
@@ -81,7 +79,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        tvNickname = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userNickname);
         tvAccount = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userAccount);
     }
 
@@ -133,10 +130,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            return true;
-        }
-        if (id == R.id.menu_editProfile) {
-            goToEditProfileActivity();
             return true;
         }
 
@@ -197,17 +190,14 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     private void initAfterSignIn() {
+        user = new User(fuser.getUid());
+        tvAccount.setText(fuser.getEmail());
         Clouds.getInstance().initUserData(fuser, FirebaseInstanceId.getInstance().getToken())
                 .addOnSuccessListener(new OnSuccessListener<Clouds.InitUserDataResult>() {
                     @Override
                     public void onSuccess(Clouds.InitUserDataResult initUserDataResult) {
-                        user = new User(fuser.getUid(), initUserDataResult.nickname);
-                        tvAccount.setText(fuser.getEmail());
-                        tvNickname.setText(initUserDataResult.nickname);
                         switch (initUserDataResult.status) {
                             case Clouds.InitUserDataResult.STATUS_FIRST_LOGIN:
-                                goToEditProfileActivity();
-                                break;
                             case Clouds.InitUserDataResult.STATUS_UPDATE_TOKEN:
                             case Clouds.InitUserDataResult.STATUS_NO_UPDATE:
                                 if (!goToGroupManage() && !backToNavItemByFlag()) {
@@ -258,13 +248,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         return false;
     }
 
-    private void goToEditProfileActivity() {
-        Intent intent = new Intent(this, EditProfileActivity.class);
-        intent.putExtra("user", user);
-        intent.putExtra("email", fuser.getEmail());
-        startActivityForResult(intent, RC_EDIT_PROFILE);
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -282,12 +265,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                     Snackbar.make(navigationView, "建立訂單失敗", Snackbar.LENGTH_LONG).show();
                 }
                 break;
-            case RC_EDIT_PROFILE:
-                if (resultCode == RESULT_OK) {
-                    String nickname = data.getStringExtra("nickname");
-                    updateUserNickname(nickname);
-                }
-                break;
             case RC_GROUP_MANAGE:
                 if (resultCode == RESULT_OK) {
                     backToNavItemId = R.id.nav_group;
@@ -299,24 +276,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 }
                 break;
         }
-    }
-
-    private void updateUserNickname(final String nickname) {
-        Clouds.getInstance().updateUserNickname(user.getUid(), nickname)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        user.setNickname(nickname);
-                        tvNickname.setText(nickname);
-                        Snackbar.make(navigationView, "修改成功", Snackbar.LENGTH_LONG).show();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Snackbar.make(navigationView, "修改失敗", Snackbar.LENGTH_LONG).show();
-                    }
-                });
     }
 
     @Override

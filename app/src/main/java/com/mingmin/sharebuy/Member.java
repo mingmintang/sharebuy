@@ -5,24 +5,24 @@ import com.mingmin.sharebuy.cloud.MemberDoc;
 import java.io.Serializable;
 
 /**
- * Group member, exclude group founder
+ * Group member, exclude group manager
  */
 public class Member implements Serializable {
     private String uid;
-    private String nickname;
+    private String name;
 
-    public Member(String uid, String nickname) {
+    public Member(String uid, String name) {
         this.uid = uid;
-        this.nickname = nickname;
+        this.name = name;
     }
 
     public Member(String uid, MemberDoc memberDoc) {
         this.uid = uid;
-        updateValues(memberDoc);
+        setupValues(memberDoc);
     }
 
-    private void updateValues(MemberDoc memberDoc) {
-        setNickname(memberDoc.getNickname());
+    private void setupValues(MemberDoc memberDoc) {
+        name = memberDoc.getName();
     }
 
     public String getUid() {
@@ -33,15 +33,11 @@ public class Member implements Serializable {
         this.uid = uid;
     }
 
-    public String getNickname() {
-        return nickname;
+    public String getName() {
+        return name;
     }
 
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public void setMemberDoc(MemberDoc memberDoc) {
-        updateValues(memberDoc);
+    public void setName(String name) {
+        this.name = name;
     }
 }

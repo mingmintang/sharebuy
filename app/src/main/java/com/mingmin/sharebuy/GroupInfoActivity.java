@@ -19,6 +19,8 @@ import java.util.ArrayList;
 public class GroupInfoActivity extends AppCompatActivity {
     private final String TAG = getClass().getSimpleName();
     private Group group;
+    private TextView tvSearchCode;
+    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,16 +29,37 @@ public class GroupInfoActivity extends AppCompatActivity {
 
         group = (Group) getIntent().getSerializableExtra("group");
 
-        TextView tvSearchCode = findViewById(R.id.group_info_searchCode);
-        tvSearchCode.setText(String.valueOf(group.getSearchCode()));
+        TextView tvGroupName = findViewById(R.id.group_info_groupName);
+        TextView tvManagerName = findViewById(R.id.group_info_managerName);
+        tvGroupName.setText(group.getName());
+        tvManagerName.setText(group.getManagerName());
 
-        RecyclerView recyclerView = findViewById(R.id.group_info_recyclerView);
+        tvSearchCode = findViewById(R.id.group_info_searchCode);
+        setupSearchCode();
+
+        recyclerView = findViewById(R.id.group_info_recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        setupRecyclerView(recyclerView);
+        setupRecyclerView();
     }
 
-    private void setupRecyclerView(final RecyclerView recyclerView) {
+    private void setupSearchCode() {
+        Clouds.getInstance().getGroupSearchCode(group.getId())
+                .addOnSuccessListener(new OnSuccessListener<Integer>() {
+                    @Override
+                    public void onSuccess(Integer searchCode) {
+                        tvSearchCode.setText(String.valueOf(searchCode));
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: " + e.getMessage());
+                    }
+                });
+    }
+
+    private void setupRecyclerView() {
         Clouds.getInstance().getJoinedGroupMembers(group.getId())
                 .addOnSuccessListener(new OnSuccessListener<ArrayList<Member>>() {
                     @Override
@@ -62,10 +85,10 @@ public class GroupInfoActivity extends AppCompatActivity {
         private ArrayList<Member> members;
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvNickname;
+            TextView tvName;
             ViewHolder(View itemView) {
                 super(itemView);
-                tvNickname = itemView.findViewById(R.id.group_info_nickname);
+                tvName = itemView.findViewById(R.id.group_info_nickname);
             }
         }
 
@@ -82,7 +105,7 @@ public class GroupInfoActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            holder.tvNickname.setText(members.get(position).getNickname());
+            holder.tvName.setText(members.get(position).getName());
         }
 
         @Override

@@ -138,7 +138,7 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
         btnConfirm.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                listener.onBuyOrderConfirm(order, Integer.parseInt(etBuyCount.getText().toString()));
+                listener.onBuyOrderConfirm(order, group, Integer.parseInt(etBuyCount.getText().toString()));
                 dialog.dismiss();
             }
         });
@@ -158,14 +158,14 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
 
     private void initBuyerList(View view) {
         final TextView tvBuyerList = view.findViewById(R.id.buy_order_buyer_list);
-        Clouds.getInstance().getGroupOrderBuyers(group.getId(), order.getId())
+        Clouds.getInstance().getOrderBuyersForDisplay(group.getId(), order.getId())
                 .addOnSuccessListener(new OnSuccessListener<ArrayList<Buyer>>() {
                     @Override
                     public void onSuccess(ArrayList<Buyer> buyers) {
                         if (buyers.size() > 0) {
                             StringBuffer sb = new StringBuffer();
                             for (Buyer buyer : buyers) {
-                                sb.append(group.searchNicknameByUid(buyer.getUid()))
+                                sb.append(buyer.getName())
                                         .append(" +")
                                         .append(buyer.getBuyCount())
                                         .append(" = ")
@@ -185,6 +185,6 @@ public class BuyOrderDialog extends AppCompatDialogFragment {
     }
 
     public interface BuyOrderListener {
-        void onBuyOrderConfirm(Order order, int buyCount);
+        void onBuyOrderConfirm(Order order, Group group, int buyCount);
     }
 }

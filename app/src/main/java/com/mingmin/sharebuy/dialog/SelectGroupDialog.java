@@ -103,12 +103,12 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
     class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.ViewHolder> implements View.OnClickListener {
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName;
-            TextView tvFounderName;
+            TextView tvManagerName;
             RadioButton radioButton;
             ViewHolder(View itemView) {
                 super(itemView);
                 tvName = itemView.findViewById(R.id.group_name);
-                tvFounderName = itemView.findViewById(R.id.group_founderName);
+                tvManagerName = itemView.findViewById(R.id.group_founderName);
                 radioButton = itemView.findViewById(R.id.group_radioButton);
                 radioButton.setClickable(false);
             }
@@ -137,7 +137,7 @@ public class SelectGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            holder.tvFounderName.setText(group.getFounderNickname());
+            holder.tvManagerName.setText(group.getManagerName());
             holder.radioButton.setChecked(selectedPosition == position);
             holder.itemView.setTag(position);
         }

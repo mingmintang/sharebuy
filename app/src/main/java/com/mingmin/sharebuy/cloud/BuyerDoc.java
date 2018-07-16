@@ -5,15 +5,25 @@ import com.google.firebase.firestore.ServerTimestamp;
 import java.util.Date;
 
 public class BuyerDoc {
+    private String name;
     private int orderCount;
     private @ServerTimestamp Date orderTime;
     private int buyCount;
 
     public BuyerDoc() { }
 
-    public BuyerDoc(int orderCount, int buyCount) {
+    public BuyerDoc(String name, int orderCount, int buyCount) {
+        this.name = name;
         this.orderCount = orderCount;
         this.buyCount = buyCount;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getOrderCount() {

@@ -1,30 +1,20 @@
 package com.mingmin.sharebuy.cloud;
 
 public class MemberDoc {
-    private String nickname;
-    private boolean joined;
+    private String name;
 
     public MemberDoc() {
     }
 
-    public MemberDoc(String nickname, boolean joined) {
-        this.nickname = nickname;
-        this.joined = joined;
+    public MemberDoc(String name) {
+        this.name = name;
     }
 
-    public String getNickname() {
-        return nickname;
+    public String getName() {
+        return name;
     }
 
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
-    }
-
-    public boolean isJoined() {
-        return joined;
-    }
-
-    public void setJoined(boolean joined) {
-        this.joined = joined;
+    public void setName(String name) {
+        this.name = name;
     }
 }

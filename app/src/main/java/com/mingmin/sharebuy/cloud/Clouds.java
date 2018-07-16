@@ -14,7 +14,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -26,13 +26,14 @@ import com.google.firebase.storage.UploadTask;
 import com.mingmin.sharebuy.Buyer;
 import com.mingmin.sharebuy.Group;
 import com.mingmin.sharebuy.Member;
-import com.mingmin.sharebuy.User;
+import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.notification.GroupNotification;
 import com.mingmin.sharebuy.notification.Notification;
 import com.mingmin.sharebuy.utils.InternetCheck;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Clouds {
@@ -60,11 +61,9 @@ public class Clouds {
         public static final int STATUS_NO_UPDATE = 2;
 
         public int status;
-        public String nickname;
 
-        private InitUserDataResult(int status, String nickname) {
+        private InitUserDataResult(int status) {
             this.status = status;
-            this.nickname = nickname;
         }
     }
 
@@ -80,14 +79,13 @@ public class Clouds {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 if (documentSnapshot != null && documentSnapshot.exists()) {
-                    final String nickname = (String) documentSnapshot.get("nickname");
                     if (!documentSnapshot.contains("tokens." + token)) {
                         ref.update("tokens." + token, true)
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
                                         InitUserDataResult result = new InitUserDataResult(
-                                                InitUserDataResult.STATUS_UPDATE_TOKEN, nickname);
+                                                InitUserDataResult.STATUS_UPDATE_TOKEN);
                                         source.setResult(result);
                                     }
                                 })
@@ -99,20 +97,18 @@ public class Clouds {
                                 });
                     } else {
                         InitUserDataResult result = new InitUserDataResult(
-                                InitUserDataResult.STATUS_NO_UPDATE, nickname);
+                                InitUserDataResult.STATUS_NO_UPDATE);
                         source.setResult(result);
                     }
                 } else {
                     // first login
-                    final String nickname = fuser.getEmail().split("@")[0];
                     UserDoc userDoc = new UserDoc();
-                    userDoc.setNickname(nickname);
                     userDoc.addToken(token);
                     ref.set(userDoc).addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
                             InitUserDataResult result = new InitUserDataResult(
-                                    InitUserDataResult.STATUS_FIRST_LOGIN, nickname);
+                                    InitUserDataResult.STATUS_FIRST_LOGIN);
                             source.setResult(result);
                         }
                     }).addOnFailureListener(new OnFailureListener() {
@@ -128,22 +124,20 @@ public class Clouds {
         return source.getTask();
     }
 
-    public Task<Void> updateUserNickname(String uid, String nickname) {
-        return fs.getUserDoc(uid).update("nickname", nickname);
-    }
-
     public Task<Void> updateUserToken(String uid, String token) {
         return fs.getUserDoc(uid).update("tokens." + token, true);
     }
 
-    public Task<Void> createNewGroup(String groupName, User user) {
+    public Task<Void> createNewGroup(String groupName, String managerUid, String managerName) {
         WriteBatch batch = fs.getWriteBatch();
 
-        DocumentReference addGroupRef = fs.getGroupsCol().document();
-        GroupDoc groupDoc = new GroupDoc(groupName, user.getUid(), user.getNickname());
-        DocumentReference addGroupInUserRef = fs.getUserGroupDoc(user.getUid(), addGroupRef.getId());
-        batch.set(addGroupRef, groupDoc);
-        batch.set(addGroupInUserRef, groupDoc);
+        DocumentReference groupRef = fs.getGroupsCol().document();
+        GroupDoc groupDoc = new GroupDoc(groupName, managerUid, managerName);
+        DocumentReference userGroupRef = fs.getUserGroupDoc(managerUid, groupRef.getId());
+        UserGroupDoc userGroupDoc = new UserGroupDoc(groupName, managerUid, managerName);
+
+        batch.set(groupRef, groupDoc);
+        batch.set(userGroupRef, userGroupDoc);
 
         return batch.commit();
     }
@@ -152,8 +146,8 @@ public class Clouds {
         void onUserGroupsChanged(ArrayList<Group> groups);
     }
 
-    public void addUserGroupsListener(String uid, final UserGroupsListener listener) {
-        userGroupsRegistration = fs.getUserGroupsCol(uid).orderBy("createTime", Query.Direction.DESCENDING)
+    public void addUserGroupsListener(final String uid, final UserGroupsListener listener) {
+        userGroupsRegistration = fs.getUserGroupsCol(uid).orderBy("joinTime", Query.Direction.DESCENDING)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
@@ -165,8 +159,10 @@ public class Clouds {
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             List<DocumentSnapshot> documentSnapshots = queryDocumentSnapshots.getDocuments();
                             for (DocumentSnapshot documentSnapshot : documentSnapshots) {
-                                GroupDoc groupDoc = documentSnapshot.toObject(GroupDoc.class);
-                                Group group = new Group(documentSnapshot.getId(), groupDoc);
+                                String name = documentSnapshot.getString("name");
+                                String managerUid = documentSnapshot.getString("managerUid");
+                                String managerName = documentSnapshot.getString("managerName");
+                                Group group = new Group(documentSnapshot.getId(), name, managerUid, managerName);
                                 groups.add(group);
                             }
                         } else {
@@ -193,8 +189,10 @@ public class Clouds {
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             List<DocumentSnapshot> documentSnapshots = queryDocumentSnapshots.getDocuments();
                             for (DocumentSnapshot documentSnapshot : documentSnapshots) {
-                                GroupDoc groupDoc = documentSnapshot.toObject(GroupDoc.class);
-                                Group group = new Group(documentSnapshot.getId(), groupDoc);
+                                String name = documentSnapshot.getString("name");
+                                String managerUid = documentSnapshot.getString("managerUid");
+                                String managerName = documentSnapshot.getString("managerName");
+                                Group group = new Group(documentSnapshot.getId(), name, managerUid, managerName);
                                 groups.add(group);
                             }
                         } else {
@@ -213,17 +211,25 @@ public class Clouds {
         return source.getTask();
     }
 
-    public Task<ArrayList<Group>> getUserGroups(String uid) {
+    public Task<ArrayList<Group>> getUserGroups(final String uid) {
         final TaskCompletionSource<ArrayList<Group>> source = new TaskCompletionSource<>();
-        fs.getUserGroupsCol(uid).orderBy("createTime", Query.Direction.DESCENDING).get()
+        fs.getUserGroupsCol(uid).orderBy("joinTime", Query.Direction.DESCENDING).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         ArrayList<Group> groups = new ArrayList<>();
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             for (DocumentSnapshot snap : queryDocumentSnapshots.getDocuments()) {
-                                GroupDoc groupDoc = snap.toObject(GroupDoc.class);
-                                Group group = new Group(snap.getId(), groupDoc);
+                                String name = snap.getString("name");
+                                String managerUid = snap.getString("managerUid");
+                                String managerName = snap.getString("managerName");
+                                String myName;
+                                if (managerUid.equals(uid)) {
+                                    myName = managerName;
+                                } else {
+                                    myName = snap.getString("myName");
+                                }
+                                Group group = new Group(snap.getId(), name, managerUid, managerName, myName);
                                 groups.add(group);
                             }
                         }
@@ -240,13 +246,14 @@ public class Clouds {
         return source.getTask();
     }
 
-    public Task<Void> requestJoinGroup(final Group group, String uid) {
+    public Task<Void> requestJoinGroup(final Group group, String uid, String myName) {
         final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
         final GroupNotification notification = new GroupNotification(
                 uid,
-                group.getFounderUid(),
+                group.getManagerUid(),
                 Notification.ACTION_REQUEST_JOIN_GROUP,
-                group.getId());
+                group.getId(),
+                myName);
 
         new InternetCheck(new InternetCheck.Consumer() {
             @Override
@@ -274,14 +281,36 @@ public class Clouds {
         return source.getTask();
     }
 
+    public Task<Integer> getGroupSearchCode(String groupId) {
+        final TaskCompletionSource<Integer> source = new TaskCompletionSource<>();
+        fs.getGroupDoc(groupId).get()
+                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        int searchCode = documentSnapshot.getLong("searchCode").intValue();
+                        source.setResult(searchCode);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        source.setException(e);
+                    }
+                });
+
+        return source.getTask();
+    }
+
     public Task<Group> getGroupByGroupId(String groupId) {
         final TaskCompletionSource<Group> source = new TaskCompletionSource<>();
         fs.getGroupDoc(groupId).get()
                 .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                     @Override
                     public void onSuccess(DocumentSnapshot documentSnapshot) {
-                        GroupDoc groupDoc = documentSnapshot.toObject(GroupDoc.class);
-                        Group group = new Group(documentSnapshot.getId(), groupDoc);
+                        String name = documentSnapshot.getString("name");
+                        String managerUid = documentSnapshot.getString("managerUid");
+                        String managerName = documentSnapshot.getString("managerName");
+                        Group group = new Group(documentSnapshot.getId(), name, managerUid, managerName);
                         source.setResult(group);
                     }
                 })
@@ -301,7 +330,7 @@ public class Clouds {
     }
 
     public void addJoiningGroupMembersListener(String groupId, final GroupMembersListener listener) {
-        joiningGroupMembersRegistration = fs.getGroupMembersCol(groupId).whereEqualTo("joined", false)
+        joiningGroupMembersRegistration = fs.getGroupJoiningMembersCol(groupId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
@@ -313,8 +342,8 @@ public class Clouds {
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             List<DocumentSnapshot> documentSnapshots = queryDocumentSnapshots.getDocuments();
                             for (DocumentSnapshot documentSnapshot : documentSnapshots) {
-                                String nickname = (String) documentSnapshot.get("nickname");
-                                Member member = new Member(documentSnapshot.getId(), nickname);
+                                String name = documentSnapshot.getString("name");
+                                Member member = new Member(documentSnapshot.getId(), name);
                                 members.add(member);
                             }
                         } else {
@@ -326,7 +355,7 @@ public class Clouds {
     }
 
     public void addJoinedGroupMembersListener(String groupId, final GroupMembersListener listener) {
-        joinedGroupMembersRegistration = fs.getGroupMembersCol(groupId).whereEqualTo("joined", true)
+        joinedGroupMembersRegistration = fs.getGroupMembersCol(groupId)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot queryDocumentSnapshots, @Nullable FirebaseFirestoreException e) {
@@ -338,8 +367,8 @@ public class Clouds {
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             List<DocumentSnapshot> documentSnapshots = queryDocumentSnapshots.getDocuments();
                             for (DocumentSnapshot documentSnapshot : documentSnapshots) {
-                                String nickname = (String) documentSnapshot.get("nickname");
-                                Member member = new Member(documentSnapshot.getId(), nickname);
+                                String name = documentSnapshot.getString("name");
+                                Member member = new Member(documentSnapshot.getId(), name);
                                 members.add(member);
                             }
                         } else {
@@ -364,15 +393,15 @@ public class Clouds {
 
     public Task<ArrayList<Member>> getJoinedGroupMembers(String groupId) {
         final TaskCompletionSource<ArrayList<Member>> source = new TaskCompletionSource<>();
-        fs.getGroupMembersCol(groupId).whereEqualTo("joined", true).get()
+        fs.getGroupMembersCol(groupId).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         ArrayList<Member> members = new ArrayList<>();
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             for (DocumentSnapshot snap : queryDocumentSnapshots.getDocuments()) {
-                                String nickname = (String) snap.get("nickname");
-                                Member member = new Member(snap.getId(), nickname);
+                                String name = snap.getString("name");
+                                Member member = new Member(snap.getId(), name);
                                 members.add(member);
                             }
                         }
@@ -389,31 +418,67 @@ public class Clouds {
         return source.getTask();
     }
 
-    public Task<Void> acceptJoinGroup(Group group, String uid) {
+    public Task<Boolean> checkMemberNameDuplicate(Group group, String memberName) {
+        final TaskCompletionSource<Boolean> source = new TaskCompletionSource<>();
+        if (group.getManagerName().equals(memberName)) {
+            source.setResult(true);
+            return source.getTask();
+        }
+        fs.getGroupMembersCol(group.getId()).whereEqualTo("name", memberName).get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        if (queryDocumentSnapshots.isEmpty()) {
+                            Log.d(TAG, "onSuccess: empty");
+                            source.setResult(false);
+                        } else {
+                            String result = queryDocumentSnapshots.getDocuments().get(0).getId();
+                            Log.d(TAG, "onSuccess: duplicate=" + result);
+                            source.setResult(true);
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        source.setException(e);
+                    }
+                });
+
+        return source.getTask();
+    }
+
+    public Task<Void> acceptJoinGroup(Group group, String memberUid, String memberName) {
         WriteBatch batch = fs.getWriteBatch();
-        DocumentReference addMemberRef = fs.getGroupMemberDoc(group.getId(), uid);
-        DocumentReference addGroupInUserRef = fs.getUserGroupDoc(uid, group.getId());
-        batch.update(addMemberRef, "joined", true);
-        batch.set(addGroupInUserRef, group.getGroupDoc());
+        DocumentReference groupMemberRef = fs.getGroupMemberDoc(group.getId(), memberUid);
+        DocumentReference joiningMemberRef = fs.getGroupJoiningMemberDoc(group.getId(), memberUid);
+        DocumentReference userGroupRef = fs.getUserGroupDoc(memberUid, group.getId());
+        MemberDoc memberDoc = new MemberDoc(memberName);
+        UserGroupDoc userGroupDoc = new UserGroupDoc(group.getName(), group.getManagerUid(), group.getManagerName(), memberName);
+
+        batch.set(groupMemberRef, memberDoc);
+        batch.delete(joiningMemberRef);
+        batch.set(userGroupRef, userGroupDoc);
 
         return batch.commit();
     }
 
-    public Task<Void> declineJoinGroup(String groupId, String uid) {
-        return fs.getGroupMemberDoc(groupId, uid).delete();
+    public Task<Void> declineJoinGroup(String groupId, String memberUid) {
+        return fs.getGroupJoiningMemberDoc(groupId, memberUid).delete();
     }
 
-    public Task<Void> exitGroup(String groupId, String uid) {
+    public Task<Void> exitGroup(String groupId, String memberUid) {
         WriteBatch batch = fs.getWriteBatch();
-        DocumentReference deleteMemberRef = fs.getGroupMemberDoc(groupId, uid);
-        DocumentReference deleteGroupInUserRef = fs.getUserGroupDoc(uid, groupId);
-        batch.delete(deleteMemberRef);
-        batch.delete(deleteGroupInUserRef);
+        DocumentReference groupMemberRef = fs.getGroupMemberDoc(groupId, memberUid);
+        DocumentReference userGroupRef = fs.getUserGroupDoc(memberUid, groupId);
+
+        batch.delete(groupMemberRef);
+        batch.delete(userGroupRef);
 
         return batch.commit();
     }
 
-    public Task<Void> buildNewOrder(final int orderState, String imagePath, final String creatorUid, final OrderDoc orderDoc, @Nullable final String groupId) {
+    public Task<Void> buildNewOrder(final int orderState, String imagePath, final String uid, final OrderDoc orderDoc, @Nullable final Group group) {
         final StorageReference imagePathRef = Storage.getInstance().createOrderImagePathRef();
         UploadTask uploadImageTask = imagePathRef.putFile(Uri.fromFile(new File(imagePath)));
         Task<Void> buildNewOrderTask = uploadImageTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
@@ -434,38 +499,31 @@ public class Clouds {
                 orderDoc.setImageUrl(downloadUri.toString());
 
                 WriteBatch batch = fs.getWriteBatch();
-                DocumentReference addUserOrderRef = fs.getUserOrdersCol(creatorUid).document();
-                String orderId = addUserOrderRef.getId();
+                // Create order id
+                DocumentReference userOrderRef = fs.getUserOrdersCol(uid).document();
+                String orderId = userOrderRef.getId();
+
                 orderDoc.setState(orderState);
-                switch (orderState) {
-                    case Order.STATE_CREATE:
-                        orderDoc.setCreatorUid(creatorUid);
-                        break;
-                    case Order.STATE_TAKE:
-                        orderDoc.setCreatorUid(creatorUid);
-                        orderDoc.setTakerUid(creatorUid);
-                        break;
-                    case Order.STATE_END:
-                        // End order directly, it would be personal order.
-                        orderDoc.setCreatorUid(creatorUid);
-                        orderDoc.setTakerUid(creatorUid);
-                        orderDoc.setEndTime();
-                        break;
+                if (orderState == Order.STATE_END) {
+                    orderDoc.setEndTime();
                 }
 
-                if (groupId != null) {
-                    // Group Order
-                    orderDoc.setGroupId(groupId);
-                    DocumentReference addGroupOrderRef = fs.getGroupOrderDoc(groupId, orderId);
-                    batch.set(addGroupOrderRef, orderDoc);
+                if (group != null) {
+                    // Handle Group Order
+                    orderDoc.setGroupId(group.getId());
+                    orderDoc.setManagerUid(uid);
+                    orderDoc.setManagerName(group.getMyName());
+                    DocumentReference groupOrderRef = fs.getGroupOrderDoc(group.getId(), orderId);
+                    batch.set(groupOrderRef, orderDoc);
+
                     if (orderDoc.getBuyCount() > 0) {
-                        BuyerDoc buyerDoc = new BuyerDoc(orderDoc.getBuyCount(), orderDoc.getBuyCount());
-                        DocumentReference addBuyerRef = fs.getGroupOrderBuyerDoc(groupId, orderId, creatorUid);
-                        batch.set(addBuyerRef, buyerDoc);
+                        DocumentReference orderBuyerRef = fs.getGroupOrderBuyerDoc(group.getId(), orderId, uid);
+                        BuyerDoc buyerDoc = new BuyerDoc(group.getMyName(), orderDoc.getBuyCount(), orderDoc.getBuyCount());
+                        batch.set(orderBuyerRef, buyerDoc);
                     }
                 }
 
-                batch.set(addUserOrderRef, orderDoc);
+                batch.set(userOrderRef, orderDoc);
                 return batch.commit();
             }
         });
@@ -477,7 +535,7 @@ public class Clouds {
         return fs.getGroupOrdersCol(groupId).orderBy("createTime", Query.Direction.DESCENDING).limit(30);
     }
 
-    public Task<ArrayList<Buyer>> getGroupOrderBuyers(String groupId, String orderId) {
+    public Task<ArrayList<Buyer>> getOrderBuyersForDisplay(String groupId, String orderId) {
         final TaskCompletionSource<ArrayList<Buyer>> source = new TaskCompletionSource<>();
         fs.getGroupOrderBuyersCol(groupId, orderId).orderBy("orderTime", Query.Direction.ASCENDING).get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
@@ -486,8 +544,9 @@ public class Clouds {
                         ArrayList<Buyer> buyers = new ArrayList<>();
                         if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
                             for (DocumentSnapshot snap : queryDocumentSnapshots.getDocuments()) {
-                                BuyerDoc buyerDoc = snap.toObject(BuyerDoc.class);
-                                Buyer buyer = new Buyer(snap.getId(), buyerDoc);
+                                String name = snap.getString("name");
+                                int buyCount = snap.getLong("buyCount").intValue();
+                                Buyer buyer = new Buyer(snap.getId(), name, buyCount);
                                 buyers.add(buyer);
                             }
                         }
@@ -504,7 +563,7 @@ public class Clouds {
         return source.getTask();
     }
 
-    public Task<Void> buyGroupOrder(final String groupId, final String orderId, final String uid, final int buyCount) {
+    public Task<Void> buyGroupOrder(final String groupId, final String orderId, final String uid, final String myName, final int buyCount) {
         final DocumentReference groupOrderDoc = fs.getGroupOrderDoc(groupId, orderId);
         Task<Void> buyGroupOrderTask = fs.runTransaction(new Transaction.Function<Long>() {
             @Nullable
@@ -537,7 +596,14 @@ public class Clouds {
                 if (!task.isSuccessful()) {
                     throw task.getException();
                 }
-                return fs.getGroupOrderBuyerDoc(groupId, orderId, uid).set(new BuyerDoc(buyCount, buyCount));
+                int amount = task.getResult().intValue();
+                WriteBatch batch = fs.getWriteBatch();
+                DocumentReference userOrderRef = fs.getUserOrderDoc(uid, orderId);
+                DocumentReference orderBuyerRef = fs.getGroupOrderBuyerDoc(groupId, orderId, uid);
+
+                batch.update(userOrderRef, "buyCount", amount);
+                batch.set(orderBuyerRef, new BuyerDoc(myName, buyCount, buyCount));
+                return batch.commit();
             }
         });
 

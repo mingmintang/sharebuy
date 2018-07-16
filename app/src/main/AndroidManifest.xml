@@ -29,7 +29,6 @@
         <activity
             android:name=".AddOrderActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".EditProfileActivity" />
 
         <service android:name=".service.SharebuyFirebaseInstanceIdService">
             <intent-filter>

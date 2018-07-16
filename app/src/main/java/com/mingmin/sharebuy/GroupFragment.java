@@ -25,7 +25,6 @@ import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.Query;
-import com.mingmin.sharebuy.cloud.CloudActions;
 import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
@@ -183,8 +182,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     @Override
-    public void onJoinGroupConfirm(Group group) {
-        Clouds.getInstance().requestJoinGroup(group, user.getUid())
+    public void onJoinGroupConfirm(Group group, String myName) {
+        Clouds.getInstance().requestJoinGroup(group, user.getUid(), myName)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
@@ -200,8 +199,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     @Override
-    public void onAddGroupConfirm(String groupName) {
-        Clouds.getInstance().createNewGroup(groupName, user)
+    public void onAddGroupConfirm(String groupName, String managerName) {
+        Clouds.getInstance().createNewGroup(groupName, user.getUid(), managerName)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
@@ -250,7 +249,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 currentGroup = groups.get(position);
                 setupRecyclerView();
-                if (currentGroup.getFounderUid().equals(user.getUid())) {
+                if (currentGroup.getManagerUid().equals(user.getUid())) {
                     ibManage.setEnabled(true);
                     ibManage.setImageResource(R.drawable.ic_group_setting);
                     ibManage.setOnClickListener(new View.OnClickListener() {
@@ -277,23 +276,10 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     private void setupRecyclerView() {
-        Clouds.getInstance().getJoinedGroupMembers(currentGroup.getId())
-                .addOnSuccessListener(new OnSuccessListener<ArrayList<Member>>() {
-                    @Override
-                    public void onSuccess(ArrayList<Member> members) {
-                        currentGroup.setMembers(members);
-                        Query query = Clouds.getInstance().getGroupOrdersQuery(currentGroup.getId());
-                        recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, query, currentGroup);
-                        recyclerView.setAdapter(recyclerAdapter);
-                        recyclerAdapter.startListening();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "onFailure: " + e.getMessage());
-                    }
-                });
+        Query query = Clouds.getInstance().getGroupOrdersQuery(currentGroup.getId());
+        recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, currentGroup, query);
+        recyclerView.setAdapter(recyclerAdapter);
+        recyclerAdapter.startListening();
     }
 
     @Override
@@ -303,8 +289,8 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     }
 
     @Override
-    public void onBuyOrderConfirm(Order order, int buyCount) {
-        Clouds.getInstance().buyGroupOrder(currentGroup.getId(), order.getId(), user.getUid(), buyCount)
+    public void onBuyOrderConfirm(Order order, Group group, int buyCount) {
+        Clouds.getInstance().buyGroupOrder(group.getId(), order.getId(), user.getUid(), group.getMyName(), buyCount)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {

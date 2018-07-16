@@ -2,26 +2,30 @@ package com.mingmin.sharebuy.cloud;
 
 import com.google.firebase.firestore.ServerTimestamp;
 
-import java.io.Serializable;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
 
-public class GroupDoc implements Serializable {
+public class UserGroupDoc {
     private String name;
     private String managerUid;
     private String managerName;
-    private @ServerTimestamp Date createTime;
-    private int searchCode;
+    private @ServerTimestamp Date joinTime;
+    private String myName; // myName is null if user is manager.
 
-    public GroupDoc() { }
+    public UserGroupDoc() { }
 
-    public GroupDoc(String name, String managerUid, String managerName) {
+    // For group manager, do not save myName
+    public UserGroupDoc(String name, String managerUid, String managerName) {
         this.name = name;
         this.managerUid = managerUid;
         this.managerName = managerName;
-        searchCode = new Random(System.currentTimeMillis()).nextInt(999998) + 1;
+    }
+
+    // For group member
+    public UserGroupDoc(String name, String managerUid, String managerName, String myName) {
+        this.name = name;
+        this.managerUid = managerUid;
+        this.managerName = managerName;
+        this.myName = myName;
     }
 
     public String getName() {
@@ -48,11 +52,15 @@ public class GroupDoc implements Serializable {
         this.managerName = managerName;
     }
 
-    public Date getCreateTime() {
-        return createTime;
+    public Date getJoinTime() {
+        return joinTime;
     }
 
-    public int getSearchCode() {
-        return searchCode;
+    public String getMyName() {
+        return myName;
+    }
+
+    public void setMyName(String myName) {
+        this.myName = myName;
     }
 }

@@ -4,12 +4,15 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +37,9 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
     private JoinGroupListener listener;
     private ArrayList<Group> searchedGroups = new ArrayList<>();
     private RecyclerView recyclerView;
+    private Button btnConfirm;
+    private EditText etMemberName;
+    private TextInputLayout tlMemberName;
 
     public static JoinGroupDialog newInstance(JoinGroupListener listener) {
         JoinGroupDialog fragment = new JoinGroupDialog();
@@ -52,20 +58,14 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
                 .create();
         dialog.getWindow().setWindowAnimations(R.style.dialog_animation_up);
 
-        initRecyclerView(view);
-
-        final Button btnConfirm = view.findViewById(R.id.join_group_confirm);
-        btnConfirm.setEnabled(false);
-        btnConfirm.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
-                listener.onJoinGroupConfirm(searchedGroups.get(adapter.getSelectedPosition()));
-                dialog.dismiss();
-            }
-        });
-
         final EditText etSearchCode = view.findViewById(R.id.join_group_searchCode);
+        final TextInputLayout tlSearchCode = view.findViewById(R.id.join_group_searchCode_layout);
+        ImageButton ibSearch = view.findViewById(R.id.join_group_search);
+        etMemberName = view.findViewById(R.id.join_group_memberName);
+        tlMemberName = view.findViewById(R.id.join_group_memberName_layout);
+        btnConfirm = view.findViewById(R.id.join_group_confirm);
+        btnConfirm.setEnabled(false);
+
         etSearchCode.setFilters(new InputFilter[]{new InputFilter() {
             @Override
             public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
@@ -77,42 +77,90 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
             }
         }});
 
-        ImageButton ibSearch = view.findViewById(R.id.join_group_search);
         ibSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (TextUtils.isEmpty(etSearchCode.getText())) {
-                    etSearchCode.setError("不能空白");
-                } else {
-                    int searchCode = Integer.parseInt(etSearchCode.getText().toString());
-                    Clouds.getInstance().searchGroupsBySearchCode(searchCode)
-                            .addOnSuccessListener(new OnSuccessListener<ArrayList<Group>>() {
-                                @Override
-                                public void onSuccess(ArrayList<Group> groups) {
-                                    searchedGroups = groups;
-                                    recyclerView.setAdapter(new GroupAdapter(searchedGroups));
-                                    if (searchedGroups.size() > 0) {
-                                        btnConfirm.setEnabled(true);
-                                    } else {
-                                        btnConfirm.setEnabled(false);
-                                    }
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Log.d(TAG, "onFailure: " + e.getMessage());
-                                }
-                            });
+                    tlSearchCode.setError("不能空白");
+                    return;
                 }
+                tlSearchCode.setErrorEnabled(false);
+
+                int searchCode = Integer.parseInt(etSearchCode.getText().toString());
+                Clouds.getInstance().searchGroupsBySearchCode(searchCode)
+                        .addOnSuccessListener(new OnSuccessListener<ArrayList<Group>>() {
+                            @Override
+                            public void onSuccess(ArrayList<Group> groups) {
+                                searchedGroups = groups;
+                                recyclerView.setAdapter(new GroupAdapter(searchedGroups));
+                                switchBtnConfirmEnable();
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.d(TAG, "onFailure: " + e.getMessage());
+                            }
+                        });
             }
         });
+
+        etMemberName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                switchBtnConfirmEnable();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) { }
+        });
+
+        btnConfirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                GroupAdapter adapter = (GroupAdapter) recyclerView.getAdapter();
+                final Group selectedGroup = searchedGroups.get(adapter.getSelectedPosition());
+                final String memberName = etMemberName.getText().toString();
+                Clouds.getInstance().checkMemberNameDuplicate(selectedGroup, memberName)
+                        .addOnSuccessListener(new OnSuccessListener<Boolean>() {
+                            @Override
+                            public void onSuccess(Boolean isDuplicate) {
+                                if (isDuplicate) {
+                                    tlMemberName.setError("名稱重複");
+                                } else {
+                                    tlMemberName.setErrorEnabled(false);
+                                    listener.onJoinGroupConfirm(selectedGroup, memberName);
+                                    dialog.dismiss();
+                                }
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.d(TAG, "onFailure: " + e.getMessage());
+                            }
+                        });
+            }
+        });
+
+        initRecyclerView(view);
 
         return dialog;
     }
 
+    private void switchBtnConfirmEnable() {
+        if (searchedGroups.size() > 0 && !TextUtils.isEmpty(etMemberName.getText().toString())) {
+            btnConfirm.setEnabled(true);
+        } else {
+            btnConfirm.setEnabled(false);
+        }
+    }
+
     public interface JoinGroupListener {
-        void onJoinGroupConfirm(Group group);
+        void onJoinGroupConfirm(Group group, String myName);
     }
 
     private void initRecyclerView(View view) {
@@ -130,12 +178,12 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
     class GroupAdapter extends RecyclerView.Adapter<GroupAdapter.ViewHolder> implements View.OnClickListener {
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName;
-            TextView tvFounderName;
+            TextView tvManagerName;
             RadioButton radioButton;
             ViewHolder(View itemView) {
                 super(itemView);
                 tvName = itemView.findViewById(R.id.group_name);
-                tvFounderName = itemView.findViewById(R.id.group_founderName);
+                tvManagerName = itemView.findViewById(R.id.group_founderName);
                 radioButton = itemView.findViewById(R.id.group_radioButton);
                 radioButton.setClickable(false);
             }
@@ -164,7 +212,7 @@ public class JoinGroupDialog extends AppCompatDialogFragment {
         public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
             Group group = groups.get(position);
             holder.tvName.setText(group.getName());
-            holder.tvFounderName.setText(group.getFounderNickname());
+            holder.tvManagerName.setText(group.getManagerName());
             holder.radioButton.setChecked(selectedPosition == position);
             holder.itemView.setTag(position);
 

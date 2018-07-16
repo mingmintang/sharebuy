@@ -1,5 +1,6 @@
 package com.mingmin.sharebuy;
 
+import com.mingmin.sharebuy.cloud.BuyerDoc;
 import com.mingmin.sharebuy.cloud.OrderDoc;
 
 import java.util.Date;
@@ -26,8 +27,8 @@ public class Order {
     private int buyCount;
     private String imageUrl;
     private String id;
-    private String creatorUid;
-    private String takerUid;
+    private String managerUid;
+    private String managerName;
     private String name;
     private String desc;
     private String groupId; // null: Personal Order, not null: Group Order
@@ -40,25 +41,41 @@ public class Order {
      * The buyer would add values to buyers collection after buyCount is updated successfully.
      * key: buyer uid, value: buyer object
      */
-    private Map<String, Buyer> buyers;
+    private HashMap<String, Buyer> buyers;
 
-    public Order() {
+    public Order(String orderId, int state, int maxBuyCount, int buyCount, String imageUrl,
+                 String managerUid, String managerName, String name, String desc, String groupId,
+                 int price, int coinUnit, Date createTime, Date endTime) {
+        id = orderId;
         buyers = new HashMap<>();
+        this.state = state;
+        this.maxBuyCount = maxBuyCount;
+        this.buyCount = buyCount;
+        this.imageUrl = imageUrl;
+        this.managerUid = managerUid;
+        this.managerName = managerName;
+        this.name = name;
+        this.desc = desc;
+        this.groupId = groupId;
+        this.price = price;
+        this.coinUnit = coinUnit;
+        this.createTime = createTime;
+        this.endTime = endTime;
     }
 
     public Order(String orderId, OrderDoc orderDoc) {
-        this();
         id = orderId;
-        setOrderDoc(orderDoc);
+        buyers = new HashMap<>();
+        setupValues(orderDoc);
     }
 
-    private void updateValues(OrderDoc orderDoc) {
+    private void setupValues(OrderDoc orderDoc) {
         state = orderDoc.getState();
         maxBuyCount = orderDoc.getMaxBuyCount();
         buyCount = orderDoc.getBuyCount();
         imageUrl = orderDoc.getImageUrl();
-        creatorUid = orderDoc.getCreatorUid();
-        takerUid = orderDoc.getTakerUid();
+        managerUid = orderDoc.getManagerUid();
+        managerName = orderDoc.getManagerName();
         name = orderDoc.getName();
         desc = orderDoc.getDesc();
         groupId = orderDoc.getGroupId();
@@ -66,10 +83,6 @@ public class Order {
         coinUnit = orderDoc.getCoinUnit();
         createTime = orderDoc.getCreateTime();
         endTime = orderDoc.getEndTime();
-    }
-
-    public void setOrderDoc(OrderDoc orderDoc) {
-        updateValues(orderDoc);
     }
 
     public int getState() {
@@ -112,20 +125,20 @@ public class Order {
         this.id = id;
     }
 
-    public String getCreatorUid() {
-        return creatorUid;
+    public String getManagerUid() {
+        return managerUid;
     }
 
-    public void setCreatorUid(String creatorUid) {
-        this.creatorUid = creatorUid;
+    public void setManagerUid(String managerUid) {
+        this.managerUid = managerUid;
     }
 
-    public String getTakerUid() {
-        return takerUid;
+    public String getManagerName() {
+        return managerName;
     }
 
-    public void setTakerUid(String takerUid) {
-        this.takerUid = takerUid;
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
     }
 
     public String getName() {
@@ -184,7 +197,7 @@ public class Order {
         buyers.put(buyer.getUid(), buyer);
     }
 
-    public void setBuyers(Map<String, Buyer> buyers) {
+    public void setBuyers(HashMap<String, Buyer> buyers) {
         this.buyers = buyers;
     }
 }

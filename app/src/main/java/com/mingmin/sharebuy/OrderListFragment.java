@@ -10,13 +10,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.firebase.ui.database.FirebaseRecyclerAdapter;
-
-import java.util.HashMap;
+import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
+import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.cloud.Clouds;
 
 public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.OrderRecyclerAdapterListener{
     private User user;
-    private FirebaseRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> adapter;
+    private FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> adapter;
     private OnFragmentInteractionListener mListener;
 
     public static OrderListFragment newInstance(User user) {

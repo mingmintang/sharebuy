@@ -6,7 +6,7 @@
     android:layout_height="55dp">
 
     <TextView
-        android:id="@+id/joined_group_member_nickname"
+        android:id="@+id/joined_group_member_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"

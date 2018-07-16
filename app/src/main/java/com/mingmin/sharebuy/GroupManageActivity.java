@@ -7,6 +7,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -137,11 +138,11 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
             implements ConfirmDialog.OnConfirmListener {
         private ArrayList<Member> members;
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvNickname;
+            TextView tvMemberName;
             Button btnRemove;
             ViewHolder(View itemView) {
                 super(itemView);
-                tvNickname = itemView.findViewById(R.id.joined_group_member_nickname);
+                tvMemberName = itemView.findViewById(R.id.joined_group_member_name);
                 btnRemove = itemView.findViewById(R.id.joined_group_member_remove);
             }
         }
@@ -160,13 +161,13 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         @Override
         public void onBindViewHolder(@NonNull JoinedMemberAdapter.ViewHolder holder, int position) {
             final Member member = members.get(position);
-            holder.tvNickname.setText(member.getNickname());
+            holder.tvMemberName.setText(member.getName());
             holder.btnRemove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     ConfirmDialog.newInstance(JoinedMemberAdapter.this,
                             "退出群組",
-                            "確定將 " + member.getNickname() + " 退出群組？",
+                            "確定將 " + member.getName() + " 退出群組？",
                             member)
                             .show(getSupportFragmentManager(), "GroupRemove");
                 }
@@ -205,12 +206,12 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
             int clickedViewId;
         }
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvNickname;
+            TextView tvMemberName;
             Button btnAccept;
             Button btnDecline;
             ViewHolder(View itemView) {
                 super(itemView);
-                tvNickname = itemView.findViewById(R.id.joining_group_member_nickname);
+                tvMemberName = itemView.findViewById(R.id.joining_group_member_name);
                 btnAccept = itemView.findViewById(R.id.joining_group_member_accept);
                 btnDecline = itemView.findViewById(R.id.joining_group_member_decline);
             }
@@ -232,14 +233,14 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
             final Member member = members.get(position);
             final TagData tagData = new TagData();
             tagData.member = member;
-            holder.tvNickname.setText(member.getNickname());
+            holder.tvMemberName.setText(member.getName());
             holder.btnAccept.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     tagData.clickedViewId = v.getId();
                     ConfirmDialog.newInstance(JoiningMemberAdapter.this,
                             "加入群組",
-                            "確定將 " + member.getNickname() + " 加入群組？",
+                            "確定將 " + member.getName() + " 加入群組？",
                             tagData)
                             .show(getSupportFragmentManager(), "GroupJoin");
                 }
@@ -250,7 +251,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
                     tagData.clickedViewId = v.getId();
                     ConfirmDialog.newInstance(JoiningMemberAdapter.this,
                             "取消加入申請",
-                            "取消 " + member.getNickname() + " 加入群組申請？",
+                            "取消 " + member.getName() + " 加入群組申請？",
                             tagData)
                             .show(getSupportFragmentManager(), "GroupJoinCancel");
                 }
@@ -276,7 +277,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
         }
 
         private void acceptJoinGroup(Member member) {
-            Clouds.getInstance().acceptJoinGroup(group, member.getUid())
+            Clouds.getInstance().acceptJoinGroup(group, member.getUid(), member.getName())
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {

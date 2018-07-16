@@ -6,14 +6,13 @@
     android:layout_height="55dp">
 
     <TextView
-        android:id="@+id/joining_group_member_nickname"
+        android:id="@+id/joining_group_member_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="4dp"
-        android:text="Nickname"
         android:textAppearance="@android:style/TextAppearance.Material.Medium"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/joining_group_member_accept"
