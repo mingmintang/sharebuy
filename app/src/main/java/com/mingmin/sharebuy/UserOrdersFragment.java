@@ -14,15 +14,15 @@ import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.google.firebase.firestore.Query;
 import com.mingmin.sharebuy.cloud.Clouds;
 
-public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.OrderRecyclerAdapterListener{
+public class UserOrdersFragment extends Fragment implements UserOrderRecyclerAdapter.UserOrderRecyclerAdapterListener{
     private User user;
-    private FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> adapter;
+    private UserOrderRecyclerAdapter adapter;
     private OnFragmentInteractionListener mListener;
 
-    public static OrderListFragment newInstance(User user) {
+    public static UserOrdersFragment newInstance(User user) {
         Bundle args = new Bundle();
         args.putSerializable("user", user);
-        OrderListFragment fragment = new OrderListFragment();
+        UserOrdersFragment fragment = new UserOrdersFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -78,6 +78,7 @@ public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.
         super.onStop();
         if (adapter != null) {
             adapter.stopListening();
+            adapter.removeAllListener();
         }
     }
 
@@ -91,17 +92,14 @@ public class OrderListFragment extends Fragment implements OrderRecyclerAdapter.
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-//        Query query = fdb.getUserOrdersRef(user.getUid())
-//                .orderByChild("nCreateTime")
-//                .limitToFirst(30);
-//
-//        adapter = new OrderRecyclerAdapter(getContext(), this, query, user);
-//        recyclerView.setAdapter(adapter);
-//        adapter.startListening();
+        Query query = Clouds.getInstance().getUserOrdersQuery(user.getUid());
+        adapter = new UserOrderRecyclerAdapter(getContext(), this, user.getUid(), query);
+        recyclerView.setAdapter(adapter);
+        adapter.startListening();
     }
 
     @Override
-    public void onOrderItemViewClicked(Order order, Group group) {
+    public void onUserOrderItemViewClicked(Order order, String myName) {
 
     }
 }

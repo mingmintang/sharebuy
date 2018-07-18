@@ -1,7 +1,8 @@
 package com.mingmin.sharebuy;
 
-import com.mingmin.sharebuy.cloud.BuyerDoc;
 import com.mingmin.sharebuy.cloud.OrderDoc;
+import com.mingmin.sharebuy.cloud.UserGroupDoc;
+import com.mingmin.sharebuy.cloud.UserOrderDoc;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -35,17 +36,18 @@ public class Order {
     private int price;
     private int coinUnit; // index of coin_units string array
     private Date createTime;
-    private Date endTime;
+    private Date updateTime;
     /**
      * Buyers collection doesn't exist when Personal Order, it is used only for Group Order.
      * The buyer would add values to buyers collection after buyCount is updated successfully.
      * key: buyer uid, value: buyer object
      */
     private HashMap<String, Buyer> buyers;
+    private String myName;
 
     public Order(String orderId, int state, int maxBuyCount, int buyCount, String imageUrl,
                  String managerUid, String managerName, String name, String desc, String groupId,
-                 int price, int coinUnit, Date createTime, Date endTime) {
+                 int price, int coinUnit, Date createTime, Date updateTime) {
         id = orderId;
         buyers = new HashMap<>();
         this.state = state;
@@ -60,13 +62,20 @@ public class Order {
         this.price = price;
         this.coinUnit = coinUnit;
         this.createTime = createTime;
-        this.endTime = endTime;
+        this.updateTime = updateTime;
     }
 
     public Order(String orderId, OrderDoc orderDoc) {
         id = orderId;
         buyers = new HashMap<>();
         setupValues(orderDoc);
+    }
+
+    public Order(String id, UserOrderDoc userOrderDoc) {
+        this.id = id;
+        updateTime = userOrderDoc.getUpdateTime();
+        myName = userOrderDoc.getMyName();
+        groupId = userOrderDoc.getGroupId();
     }
 
     private void setupValues(OrderDoc orderDoc) {
@@ -82,7 +91,7 @@ public class Order {
         price = orderDoc.getPrice();
         coinUnit = orderDoc.getCoinUnit();
         createTime = orderDoc.getCreateTime();
-        endTime = orderDoc.getEndTime();
+        updateTime = orderDoc.getUpdateTime();
     }
 
     public int getState() {
@@ -185,8 +194,8 @@ public class Order {
         return createTime;
     }
 
-    public Date getEndTime() {
-        return endTime;
+    public Date getUpdateTime() {
+        return updateTime;
     }
 
     public Map<String, Buyer> getBuyers() {
@@ -199,5 +208,13 @@ public class Order {
 
     public void setBuyers(HashMap<String, Buyer> buyers) {
         this.buyers = buyers;
+    }
+
+    public String getMyName() {
+        return myName;
+    }
+
+    public void setMyName(String myName) {
+        this.myName = myName;
     }
 }

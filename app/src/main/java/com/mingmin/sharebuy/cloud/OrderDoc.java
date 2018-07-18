@@ -3,7 +3,6 @@ package com.mingmin.sharebuy.cloud;
 import com.google.firebase.firestore.ServerTimestamp;
 
 import java.util.Date;
-import java.util.HashMap;
 
 public class OrderDoc {
     private int state;
@@ -17,10 +16,13 @@ public class OrderDoc {
     private String groupId;
     private int price;
     private int coinUnit; // index of coin_units string array
-    private @ServerTimestamp Date createTime;
-    private @ServerTimestamp Date endTime = new Date(0);
+    private @ServerTimestamp Date createTime = new Date(0);
+    private @ServerTimestamp Date updateTime = new Date(0);
 
-    public OrderDoc() { }
+    public OrderDoc() {
+        setCreateTime();
+        setUpdateTime();
+    }
 
     public int getState() {
         return state;
@@ -110,15 +112,19 @@ public class OrderDoc {
         this.coinUnit = coinUnit;
     }
 
+    private void setCreateTime() {
+        createTime = null;
+    }
+
     public Date getCreateTime() {
         return createTime;
     }
 
-    public Date getEndTime() {
-        return endTime;
+    private void setUpdateTime() {
+        updateTime = null;
     }
 
-    public void setEndTime() {
-        endTime = null;
+    public Date getUpdateTime() {
+        return updateTime;
     }
 }

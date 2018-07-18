@@ -14,7 +14,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -504,9 +503,6 @@ public class Clouds {
                 String orderId = userOrderRef.getId();
 
                 orderDoc.setState(orderState);
-                if (orderState == Order.STATE_END) {
-                    orderDoc.setEndTime();
-                }
 
                 if (group != null) {
                     // Handle Group Order
@@ -523,7 +519,8 @@ public class Clouds {
                     }
                 }
 
-                batch.set(userOrderRef, orderDoc);
+                UserOrderDoc userOrderDoc = new UserOrderDoc(group.getMyName(), group.getId());
+                batch.set(userOrderRef, userOrderDoc);
                 return batch.commit();
             }
         });
@@ -532,7 +529,7 @@ public class Clouds {
     }
 
     public Query getGroupOrdersQuery(String groupId) {
-        return fs.getGroupOrdersCol(groupId).orderBy("createTime", Query.Direction.DESCENDING).limit(30);
+        return fs.getGroupOrdersCol(groupId).orderBy("updateTime", Query.Direction.DESCENDING).limit(30);
     }
 
     public Task<ArrayList<Buyer>> getOrderBuyersForDisplay(String groupId, String orderId) {
@@ -563,6 +560,7 @@ public class Clouds {
         return source.getTask();
     }
 
+    // First buy the order for group member
     public Task<Void> buyGroupOrder(final String groupId, final String orderId, final String uid, final String myName, final int buyCount) {
         final DocumentReference groupOrderDoc = fs.getGroupOrderDoc(groupId, orderId);
         Task<Void> buyGroupOrderTask = fs.runTransaction(new Transaction.Function<Long>() {
@@ -601,12 +599,17 @@ public class Clouds {
                 DocumentReference userOrderRef = fs.getUserOrderDoc(uid, orderId);
                 DocumentReference orderBuyerRef = fs.getGroupOrderBuyerDoc(groupId, orderId, uid);
 
-                batch.update(userOrderRef, "buyCount", amount);
+                UserOrderDoc userOrderDoc = new UserOrderDoc(myName, groupId);
+                batch.set(userOrderRef, userOrderDoc);
                 batch.set(orderBuyerRef, new BuyerDoc(myName, buyCount, buyCount));
                 return batch.commit();
             }
         });
 
         return buyGroupOrderTask;
+    }
+
+    public Query getUserOrdersQuery(String uid) {
+        return fs.getUserOrdersCol(uid).orderBy("updateTime");
     }
 }
