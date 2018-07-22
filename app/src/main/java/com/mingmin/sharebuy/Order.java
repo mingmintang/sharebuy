@@ -1,7 +1,6 @@
 package com.mingmin.sharebuy;
 
-import com.mingmin.sharebuy.cloud.OrderDoc;
-import com.mingmin.sharebuy.cloud.UserGroupDoc;
+import com.mingmin.sharebuy.cloud.GroupOrderDoc;
 import com.mingmin.sharebuy.cloud.UserOrderDoc;
 
 import java.util.Date;
@@ -23,19 +22,19 @@ public class Order {
     public static final int STATE_END = 2;
     public static final int STATE_CANCEL =3;
 
-    private int state;
+    private int state; // There is only end state in Personal Order.
     private int maxBuyCount; // 0: no limit max buy count
     private int buyCount;
     private String imageUrl;
     private String id;
-    private String managerUid;
-    private String managerName;
+    private String managerUid; // null: Personal Order, not null: Group Order
+    private String managerName; // null: Personal Order, not null: Group Order
     private String name;
     private String desc;
     private String groupId; // null: Personal Order, not null: Group Order
     private int price;
     private int coinUnit; // index of coin_units string array
-    private Date createTime;
+    private Date createTime; // If Personal Order, createTime = updateTime
     private Date updateTime;
     /**
      * Buyers collection doesn't exist when Personal Order, it is used only for Group Order.
@@ -65,10 +64,10 @@ public class Order {
         this.updateTime = updateTime;
     }
 
-    public Order(String orderId, OrderDoc orderDoc) {
+    public Order(String orderId, GroupOrderDoc groupOrderDoc) {
         id = orderId;
         buyers = new HashMap<>();
-        setupValues(orderDoc);
+        setupValues(groupOrderDoc);
     }
 
     public Order(String id, UserOrderDoc userOrderDoc) {
@@ -78,20 +77,20 @@ public class Order {
         groupId = userOrderDoc.getGroupId();
     }
 
-    private void setupValues(OrderDoc orderDoc) {
-        state = orderDoc.getState();
-        maxBuyCount = orderDoc.getMaxBuyCount();
-        buyCount = orderDoc.getBuyCount();
-        imageUrl = orderDoc.getImageUrl();
-        managerUid = orderDoc.getManagerUid();
-        managerName = orderDoc.getManagerName();
-        name = orderDoc.getName();
-        desc = orderDoc.getDesc();
-        groupId = orderDoc.getGroupId();
-        price = orderDoc.getPrice();
-        coinUnit = orderDoc.getCoinUnit();
-        createTime = orderDoc.getCreateTime();
-        updateTime = orderDoc.getUpdateTime();
+    private void setupValues(GroupOrderDoc groupOrderDoc) {
+        state = groupOrderDoc.getState();
+        maxBuyCount = groupOrderDoc.getMaxBuyCount();
+        buyCount = groupOrderDoc.getBuyCount();
+        imageUrl = groupOrderDoc.getImageUrl();
+        managerUid = groupOrderDoc.getManagerUid();
+        managerName = groupOrderDoc.getManagerName();
+        name = groupOrderDoc.getName();
+        desc = groupOrderDoc.getDesc();
+        groupId = groupOrderDoc.getGroupId();
+        price = groupOrderDoc.getPrice();
+        coinUnit = groupOrderDoc.getCoinUnit();
+        createTime = groupOrderDoc.getCreateTime();
+        updateTime = groupOrderDoc.getUpdateTime();
     }
 
     public int getState() {

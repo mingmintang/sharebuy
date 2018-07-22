@@ -163,7 +163,7 @@ public class UserOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, Us
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.order_menu_buy:
+            case R.id.order_menu_end:
                 return true;
             default:
                 return false;

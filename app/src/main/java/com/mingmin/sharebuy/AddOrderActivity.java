@@ -2,7 +2,6 @@ package com.mingmin.sharebuy;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -14,8 +13,10 @@ import android.widget.Button;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
 import com.mingmin.sharebuy.cloud.Clouds;
-import com.mingmin.sharebuy.cloud.OrderDoc;
+import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.SelectGroupDialog;
 import com.mingmin.sharebuy.fragment.EditOrderFragment;
@@ -23,7 +24,7 @@ import com.mingmin.sharebuy.fragment.SelectOrderImageFragment;
 
 public class AddOrderActivity extends AppCompatActivity implements
         SelectOrderImageFragment.OnFragmentInteractionListener,
-        EditOrderFragment.OnFragmentInteractionListener, ViewPager.OnPageChangeListener, SelectGroupDialog.SelectGroupListener, ConfirmDialog.OnConfirmListener {
+        EditOrderFragment.OnFragmentInteractionListener, ViewPager.OnPageChangeListener, SelectGroupDialog.SelectGroupListener, ConfirmDialog.ConfirmListener {
 
     private ViewPager viewPager;
     private Button btnAskFor;
@@ -145,14 +146,13 @@ public class AddOrderActivity extends AppCompatActivity implements
 
     @Override
     public void onSelectGroupConfirm(Group group, Object tag) {
-
         String action = (String) tag;
         switch (action) {
             case "askForHelpBuy":
-                buildNewOrder(Order.STATE_CREATE, group);
+                buildGroupOrder(Order.STATE_CREATE, group);
                 break;
             case "helpBuy":
-                buildNewOrder(Order.STATE_TAKE, group);
+                buildGroupOrder(Order.STATE_TAKE, group);
                 break;
         }
     }
@@ -162,17 +162,36 @@ public class AddOrderActivity extends AppCompatActivity implements
         String action = (String) tag;
         switch (action) {
             case "endOrder":
-                buildNewOrder(Order.STATE_END, null);
+                buildPersonalOrder();
                 break;
         }
     }
 
-    private void buildNewOrder(int orderState, @Nullable Group group) {
-        OrderDoc orderDoc = editOrderFragment.getOrderDoc();
-        Clouds.getInstance().buildNewOrder(orderState, imagePath, user.getUid(), orderDoc, group)
+    private void buildGroupOrder(int orderState, Group group) {
+        GroupOrderDoc groupOrderDoc = editOrderFragment.getGroupOrder();
+        Clouds.getInstance().buildGroupOrder(orderState, imagePath, user.getUid(), groupOrderDoc, group)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
+                        setResult(RESULT_OK);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        setResult(RESULT_CANCELED);
+                        finish();
+                    }
+                });
+    }
+
+    private void buildPersonalOrder() {
+        UserEndOrderDoc.Personal personalOrder = editOrderFragment.getPersoanlOrder();
+        Clouds.getInstance().buildPersonalOrder(personalOrder, imagePath, user.getUid())
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
                         setResult(RESULT_OK);
                         finish();
                     }

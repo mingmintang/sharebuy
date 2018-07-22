@@ -8,17 +8,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.google.firebase.database.FirebaseDatabase;
-
-public class OrderHistoryFragment extends Fragment {
+public class UserEndOrdersFragment extends Fragment {
     private User user;
-    private FirebaseDatabase fdb;
     private OnFragmentInteractionListener mListener;
 
-    public static OrderHistoryFragment newInstance(User user) {
+    public static UserEndOrdersFragment newInstance(User user) {
         Bundle args = new Bundle();
         args.putSerializable("user", user);
-        OrderHistoryFragment fragment = new OrderHistoryFragment();
+        UserEndOrdersFragment fragment = new UserEndOrdersFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -27,14 +24,13 @@ public class OrderHistoryFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         user = (User) getArguments().getSerializable("user");
-//        fdb = FirebaseDatabase.getInstance();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_order_history, container, false);
+        return inflater.inflate(R.layout.fragment_user_end_orders, container, false);
     }
 
     // TODO: Rename method, update argument and hook method into UI event

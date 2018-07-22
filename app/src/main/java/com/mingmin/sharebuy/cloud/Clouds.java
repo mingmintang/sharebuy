@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -32,7 +33,6 @@ import com.mingmin.sharebuy.utils.InternetCheck;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 public class Clouds {
@@ -477,10 +477,11 @@ public class Clouds {
         return batch.commit();
     }
 
-    public Task<Void> buildNewOrder(final int orderState, String imagePath, final String uid, final OrderDoc orderDoc, @Nullable final Group group) {
+    public Task<Void> buildGroupOrder(final int orderState, String imagePath, final String uid, final GroupOrderDoc groupOrderDoc, final Group group) {
         final StorageReference imagePathRef = Storage.getInstance().createOrderImagePathRef();
-        UploadTask uploadImageTask = imagePathRef.putFile(Uri.fromFile(new File(imagePath)));
-        Task<Void> buildNewOrderTask = uploadImageTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+        final File imageFile = new File(imagePath);
+        UploadTask uploadImageTask = imagePathRef.putFile(Uri.fromFile(imageFile));
+        Task<Void> buildGroupOrderTask = uploadImageTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
             @Override
             public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
                 if (!task.isSuccessful()) {
@@ -491,32 +492,29 @@ public class Clouds {
         }).continueWithTask(new Continuation<Uri, Task<Void>>() {
             @Override
             public Task<Void> then(@NonNull Task<Uri> task) throws Exception {
+                imageFile.delete();
                 if (!task.isSuccessful()) {
                     throw task.getException();
                 }
                 Uri downloadUri = task.getResult();
-                orderDoc.setImageUrl(downloadUri.toString());
+                groupOrderDoc.setImageUrl(downloadUri.toString());
 
                 WriteBatch batch = fs.getWriteBatch();
                 // Create order id
                 DocumentReference userOrderRef = fs.getUserOrdersCol(uid).document();
                 String orderId = userOrderRef.getId();
 
-                orderDoc.setState(orderState);
+                groupOrderDoc.setState(orderState);
+                groupOrderDoc.setGroupId(group.getId());
+                groupOrderDoc.setManagerUid(uid);
+                groupOrderDoc.setManagerName(group.getMyName());
+                DocumentReference groupOrderRef = fs.getGroupOrderDoc(group.getId(), orderId);
+                batch.set(groupOrderRef, groupOrderDoc);
 
-                if (group != null) {
-                    // Handle Group Order
-                    orderDoc.setGroupId(group.getId());
-                    orderDoc.setManagerUid(uid);
-                    orderDoc.setManagerName(group.getMyName());
-                    DocumentReference groupOrderRef = fs.getGroupOrderDoc(group.getId(), orderId);
-                    batch.set(groupOrderRef, orderDoc);
-
-                    if (orderDoc.getBuyCount() > 0) {
-                        DocumentReference orderBuyerRef = fs.getGroupOrderBuyerDoc(group.getId(), orderId, uid);
-                        BuyerDoc buyerDoc = new BuyerDoc(group.getMyName(), orderDoc.getBuyCount(), orderDoc.getBuyCount());
-                        batch.set(orderBuyerRef, buyerDoc);
-                    }
+                if (groupOrderDoc.getBuyCount() > 0) {
+                    DocumentReference orderBuyerRef = fs.getGroupOrderBuyerDoc(group.getId(), orderId, uid);
+                    BuyerDoc buyerDoc = new BuyerDoc(group.getMyName(), groupOrderDoc.getBuyCount(), groupOrderDoc.getBuyCount());
+                    batch.set(orderBuyerRef, buyerDoc);
                 }
 
                 UserOrderDoc userOrderDoc = new UserOrderDoc(group.getMyName(), group.getId());
@@ -525,7 +523,36 @@ public class Clouds {
             }
         });
 
-        return buildNewOrderTask;
+        return buildGroupOrderTask;
+    }
+
+    public Task<DocumentReference> buildPersonalOrder(final UserEndOrderDoc.Personal personalOrder, final String imagePath, final String uid) {
+        final StorageReference imagePathRef = Storage.getInstance().createOrderImagePathRef();
+        final File imageFile = new File(imagePath);
+        UploadTask uploadImageTask = imagePathRef.putFile(Uri.fromFile(imageFile));
+        Task<DocumentReference> buildPersonalOrderTask = uploadImageTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+            @Override
+            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                return imagePathRef.getDownloadUrl();
+            }
+        }).continueWithTask(new Continuation<Uri, Task<DocumentReference>>() {
+            @Override
+            public Task<DocumentReference> then(@NonNull Task<Uri> task) throws Exception {
+                imageFile.delete();
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                Uri downloadUri = task.getResult();
+                personalOrder.setImageUrl(downloadUri.toString());
+                UserEndOrderDoc userEndOrderDoc = new UserEndOrderDoc(personalOrder);
+                return fs.getUserEndOrdersCol(uid).add(userEndOrderDoc);
+            }
+        });
+
+        return buildPersonalOrderTask;
     }
 
     public Query getGroupOrdersQuery(String groupId) {
@@ -594,7 +621,6 @@ public class Clouds {
                 if (!task.isSuccessful()) {
                     throw task.getException();
                 }
-                int amount = task.getResult().intValue();
                 WriteBatch batch = fs.getWriteBatch();
                 DocumentReference userOrderRef = fs.getUserOrderDoc(uid, orderId);
                 DocumentReference orderBuyerRef = fs.getGroupOrderBuyerDoc(groupId, orderId, uid);
@@ -611,5 +637,36 @@ public class Clouds {
 
     public Query getUserOrdersQuery(String uid) {
         return fs.getUserOrdersCol(uid).orderBy("updateTime");
+    }
+
+    public Task<Void> endGroupOrder(final String groupId, final String orderId, final String uid) {
+        final DocumentReference groupOrderDoc = fs.getGroupOrderDoc(groupId, orderId);
+        Task<Void> endGroupOrderTask = fs.runTransaction(new Transaction.Function<Void>() {
+            @Nullable
+            @Override
+            public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                transaction.update(groupOrderDoc, "state", Order.STATE_END,
+                        "updateTime", FieldValue.serverTimestamp());
+                return null;
+            }
+        }).continueWithTask(new Continuation<Void, Task<Void>>() {
+            @Override
+            public Task<Void> then(@NonNull Task<Void> task) throws Exception {
+                if (!task.isSuccessful()) {
+                    throw task.getException();
+                }
+                WriteBatch batch = fs.getWriteBatch();
+                DocumentReference userOrderRef = fs.getUserOrderDoc(uid, orderId);
+                DocumentReference userEndOrderRef = fs.getUserEndOrderDoc(uid, orderId);
+
+                batch.delete(userOrderRef);
+                UserEndOrderDoc userEndOrderDoc = new UserEndOrderDoc(groupId);
+                batch.set(userEndOrderRef, userEndOrderDoc);
+
+                return batch.commit();
+            }
+        });
+
+        return endGroupOrderTask;
     }
 }

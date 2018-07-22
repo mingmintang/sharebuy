@@ -5,11 +5,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,9 +33,9 @@ import com.mingmin.sharebuy.dialog.JoinGroupDialog;
 
 import java.util.ArrayList;
 
-public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupListener,
+public class GroupsFragment extends Fragment implements AddGroupDialog.AddGroupListener,
         PopupMenu.OnMenuItemClickListener, JoinGroupDialog.JoinGroupListener,
-        ConfirmDialog.OnConfirmListener, OrderRecyclerAdapter.OrderRecyclerAdapterListener,
+        ConfirmDialog.ConfirmListener, OrderRecyclerAdapter.OrderRecyclerAdapterListener,
         BuyOrderDialog.BuyOrderListener, Clouds.UserGroupsListener{
     private final String TAG = getClass().getSimpleName();
     private User user;
@@ -47,10 +47,10 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     private RecyclerView recyclerView;
     private ImageButton ibManage;
 
-    public static GroupFragment newInstance(User user) {
+    public static GroupsFragment newInstance(User user) {
         Bundle args = new Bundle();
         args.putSerializable("user", user);
-        GroupFragment fragment = new GroupFragment();
+        GroupsFragment fragment = new GroupsFragment();
         fragment.setArguments(args);
         return fragment;
     }
@@ -64,7 +64,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_group, container, false);
+        View view = inflater.inflate(R.layout.fragment_groups, container, false);
         initViews(view);
         return view;
     }
@@ -76,7 +76,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
 
         ImageButton ibMenu = view.findViewById(R.id.group_menu);
         popupMenu = new PopupMenu(getContext(), ibMenu);
-        popupMenu.getMenuInflater().inflate(R.menu.fragment_group_menu, popupMenu.getMenu());
+        popupMenu.getMenuInflater().inflate(R.menu.group_menu, popupMenu.getMenu());
         popupMenu.setOnMenuItemClickListener(this);
         ibMenu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,11 +134,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.group_menu_join:
-                JoinGroupDialog.newInstance(GroupFragment.this)
+                JoinGroupDialog.newInstance(GroupsFragment.this)
                         .show(getFragmentManager(), "JOIN_GROUP");
                 return true;
             case R.id.group_menu_add:
-                AddGroupDialog.newInstance(GroupFragment.this)
+                AddGroupDialog.newInstance(GroupsFragment.this)
                         .show(getFragmentManager(), "ADD_GROUP");
                 return true;
             case R.id.group_menu_info:
@@ -147,10 +147,11 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
                 getActivity().startActivityForResult(intent, MainActivity.RC_GROUP_INFO);
                 return true;
             case R.id.group_menu_exit:
+                ConfirmTag tag = new ConfirmTag("exit_group", null);
                 ConfirmDialog.newInstance(this,
                         "退出群組",
                         "確定退出 " + currentGroup.getName() +" 群組？",
-                        "exit_group")
+                        tag)
                         .show(getFragmentManager(), "exit_group");
                 return true;
             default:
@@ -215,12 +216,25 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
                 });
     }
 
+    class ConfirmTag {
+        String tag;
+        Object object;
+        public ConfirmTag(String tag, @Nullable Object object) {
+            this.tag = tag;
+            this.object = object;
+        }
+    }
+
     @Override
     public void onConfirm(Object tag) {
-        String tagStr = (String) tag;
-        switch (tagStr) {
+        ConfirmTag confirmTag = (ConfirmTag) tag;
+        switch (confirmTag.tag) {
             case "exit_group":
                 exitGroup();
+                break;
+            case "end_group_order":
+                Order order = (Order) confirmTag.object;
+                endGroupOrder(order);
                 break;
         }
     }
@@ -237,6 +251,22 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         Snackbar.make(recyclerView, "退出群組失敗", Snackbar.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void endGroupOrder(Order order) {
+        Clouds.getInstance().endGroupOrder(currentGroup.getId(), order.getId(), user.getUid())
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Snackbar.make(recyclerView, "結單成功", Snackbar.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Snackbar.make(recyclerView, "結單失敗", Snackbar.LENGTH_LONG).show();
                     }
                 });
     }
@@ -277,7 +307,7 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
 
     private void setupRecyclerView() {
         Query query = Clouds.getInstance().getGroupOrdersQuery(currentGroup.getId());
-        recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupFragment.this, currentGroup, query);
+        recyclerAdapter = new OrderRecyclerAdapter(getContext(), GroupsFragment.this, currentGroup, user, query);
         recyclerView.setAdapter(recyclerAdapter);
         recyclerAdapter.startListening();
     }
@@ -286,6 +316,13 @@ public class GroupFragment extends Fragment implements AddGroupDialog.AddGroupLi
     public void onOrderItemViewClicked(Order order, Group group) {
         BuyOrderDialog.newInstance(this, order, group)
                 .show(getFragmentManager(), "buyOrderDialog");
+    }
+
+    @Override
+    public void onOrderMenuEndClicked(Order order) {
+        ConfirmTag tag = new ConfirmTag("end_group_order", order);
+        ConfirmDialog.newInstance(this, "結單", order.getName() + " 確定結單？", tag)
+                .show(getFragmentManager(), "endOrderDialog");
     }
 
     @Override

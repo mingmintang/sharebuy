@@ -4,7 +4,7 @@ import com.google.firebase.firestore.ServerTimestamp;
 
 import java.util.Date;
 
-public class OrderDoc {
+public class GroupOrderDoc {
     private int state;
     private int maxBuyCount;
     private int buyCount;
@@ -19,7 +19,7 @@ public class OrderDoc {
     private @ServerTimestamp Date createTime = new Date(0);
     private @ServerTimestamp Date updateTime = new Date(0);
 
-    public OrderDoc() {
+    public GroupOrderDoc() {
         setCreateTime();
         setUpdateTime();
     }

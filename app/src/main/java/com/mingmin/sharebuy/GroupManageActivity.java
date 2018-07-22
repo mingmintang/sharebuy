@@ -7,7 +7,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,7 +21,7 @@ import com.mingmin.sharebuy.dialog.ConfirmDialog;
 
 import java.util.ArrayList;
 
-public class GroupManageActivity extends AppCompatActivity implements ConfirmDialog.OnConfirmListener,
+public class GroupManageActivity extends AppCompatActivity implements ConfirmDialog.ConfirmListener,
         Clouds.GroupMembersListener {
     private RecyclerView recyclerView;
     private Group group;
@@ -135,7 +134,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
     }
 
     class JoinedMemberAdapter extends RecyclerView.Adapter<JoinedMemberAdapter.ViewHolder>
-            implements ConfirmDialog.OnConfirmListener {
+            implements ConfirmDialog.ConfirmListener {
         private ArrayList<Member> members;
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvMemberName;
@@ -199,7 +198,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
     }
 
     class JoiningMemberAdapter extends RecyclerView.Adapter<JoiningMemberAdapter.ViewHolder>
-            implements ConfirmDialog.OnConfirmListener{
+            implements ConfirmDialog.ConfirmListener {
         private ArrayList<Member> members;
         class TagData {
             Member member;

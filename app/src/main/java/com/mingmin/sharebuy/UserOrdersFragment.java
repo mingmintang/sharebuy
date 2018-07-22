@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.google.firebase.firestore.Query;
 import com.mingmin.sharebuy.cloud.Clouds;
 
@@ -36,7 +35,7 @@ public class UserOrdersFragment extends Fragment implements UserOrderRecyclerAda
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_order_list, container, false);
+        View view = inflater.inflate(R.layout.fragment_user_orders, container, false);
         setupRecyclerView(view);
         return view;
     }

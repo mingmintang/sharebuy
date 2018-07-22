@@ -3,7 +3,6 @@ package com.mingmin.sharebuy;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,16 +17,12 @@ import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.firebase.ui.firestore.SnapshotParser;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
-import com.mingmin.sharebuy.cloud.Clouds;
-import com.mingmin.sharebuy.cloud.OrderDoc;
+import com.mingmin.sharebuy.cloud.GroupOrderDoc;
 
-import java.util.Date;
+public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> {
 
-public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> implements PopupMenu.OnMenuItemClickListener {
     class OrderHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
         TextView tvName;
@@ -56,7 +51,7 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
             ibMenu = itemView.findViewById(R.id.row_order_menu);
             popupMenu = new PopupMenu(context, ibMenu);
             popupMenu.getMenuInflater().inflate(R.menu.order_menu, popupMenu.getMenu());
-            popupMenu.setOnMenuItemClickListener(OrderRecyclerAdapter.this);
+            ibMenu.setVisibility(View.INVISIBLE);
             ibMenu.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -77,25 +72,27 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
     private String[] orderStatus;
     private OrderRecyclerAdapterListener listener;
     private Group group;
+    private User user;
 
     private OrderRecyclerAdapter(@NonNull FirestoreRecyclerOptions<Order> options) {
         super(options);
     }
 
-    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Group group, Query query) {
+    public OrderRecyclerAdapter(Context context, OrderRecyclerAdapterListener listener, Group group, User user, Query query) {
         this(new FirestoreRecyclerOptions.Builder<Order>()
                 .setQuery(query, new SnapshotParser<Order>() {
                     @NonNull
                     @Override
                     public Order parseSnapshot(@NonNull DocumentSnapshot snapshot) {
-                        OrderDoc orderDoc = snapshot.toObject(OrderDoc.class);
-                        return new Order(snapshot.getId(), orderDoc);
+                        GroupOrderDoc groupOrderDoc = snapshot.toObject(GroupOrderDoc.class);
+                        return new Order(snapshot.getId(), groupOrderDoc);
                     }
                 })
                 .build());
         this.context = context;
         this.listener = listener;
         this.group = group;
+        this.user = user;
         coinUnits = context.getResources().getStringArray(R.array.coin_units);
         orderStatus = context.getResources().getStringArray(R.array.order_status);
     }
@@ -134,19 +131,26 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
                 .load(order.getImageUrl())
                 .apply(requestOptions)
                 .into(holder.imageView);
-    }
 
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.order_menu_buy:
-                return true;
-            default:
-                return false;
+        if (user.getUid().equals(order.getManagerUid())) {
+            holder.ibMenu.setVisibility(View.VISIBLE);
+            holder.popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    switch (item.getItemId()) {
+                        case R.id.order_menu_end:
+                            listener.onOrderMenuEndClicked(order);
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+            });
         }
     }
 
     public interface OrderRecyclerAdapterListener {
         void onOrderItemViewClicked(Order order, Group group);
+        void onOrderMenuEndClicked(Order order);
     }
 }

@@ -16,13 +16,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.R;
-import com.mingmin.sharebuy.cloud.BuyerDoc;
-import com.mingmin.sharebuy.cloud.OrderDoc;
+import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 
 import java.io.File;
-import java.util.ArrayList;
 
 public class EditOrderFragment extends Fragment {
     private String uid;
@@ -159,24 +157,49 @@ public class EditOrderFragment extends Fragment {
                 .into(imageView);
     }
 
-    public OrderDoc getOrderDoc() {
-        OrderDoc orderDoc = new OrderDoc();
-        orderDoc.setName(etName.getText().toString());
-        orderDoc.setDesc(etDesc.getText().toString());
-        String priceStr = etPrice.getText().toString();
-        if (!TextUtils.isEmpty(priceStr)) {
-            orderDoc.setPrice(Integer.parseInt(priceStr));
+    class EditedOrder {
+        String name;
+        String desc;
+        int price;
+        int coinUnit;
+        int buyCount;
+        int maxBuyCount;
+
+        public EditedOrder() {
+            name = etName.getText().toString();
+            desc = etDesc.getText().toString();
+            String priceStr = etPrice.getText().toString();
+            if (!TextUtils.isEmpty(priceStr)) {
+                price = Integer.parseInt(priceStr);
+            }
+            coinUnit = coinUnitSpinner.getSelectedItemPosition();
+            String countStr = etCount.getText().toString();
+            if (!TextUtils.isEmpty(countStr)) {
+                buyCount = Integer.parseInt(countStr);
+            }
+            String maxBuyCountStr = etMaxBuyCount.getText().toString();
+            if (!TextUtils.isEmpty(maxBuyCountStr)) {
+                maxBuyCount = Integer.parseInt(maxBuyCountStr);
+            }
         }
-        orderDoc.setCoinUnit(coinUnitSpinner.getSelectedItemPosition());
-        String countStr = etCount.getText().toString();
-        if (!TextUtils.isEmpty(countStr)) {
-            int count = Integer.parseInt(countStr);
-            orderDoc.setBuyCount(count);
-        }
-        String maxBuyCountStr = etMaxBuyCount.getText().toString();
-        if (!TextUtils.isEmpty(maxBuyCountStr)) {
-            orderDoc.setMaxBuyCount(Integer.parseInt(maxBuyCountStr));
-        }
-        return orderDoc;
+    }
+
+    public GroupOrderDoc getGroupOrder() {
+        EditedOrder editedOrder = new EditedOrder();
+        GroupOrderDoc groupOrderDoc = new GroupOrderDoc();
+        groupOrderDoc.setName(editedOrder.name);
+        groupOrderDoc.setDesc(editedOrder.desc);
+        groupOrderDoc.setPrice(editedOrder.price);
+        groupOrderDoc.setCoinUnit(editedOrder.coinUnit);
+        groupOrderDoc.setBuyCount(editedOrder.buyCount);
+        groupOrderDoc.setMaxBuyCount(editedOrder.maxBuyCount);
+        return groupOrderDoc;
+    }
+
+    public UserEndOrderDoc.Personal getPersoanlOrder() {
+        EditedOrder editedOrder = new EditedOrder();
+        UserEndOrderDoc.Personal personalOrder = new UserEndOrderDoc.Personal(editedOrder.buyCount,
+                editedOrder.name, editedOrder.desc, editedOrder.price, editedOrder.coinUnit);
+        return personalOrder;
     }
 }

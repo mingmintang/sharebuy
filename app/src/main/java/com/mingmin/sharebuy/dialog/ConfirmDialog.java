@@ -10,13 +10,13 @@ import android.support.v7.app.AppCompatDialogFragment;
 import com.mingmin.sharebuy.R;
 
 public class ConfirmDialog extends AppCompatDialogFragment {
-    private OnConfirmListener listener;
+    private ConfirmListener listener;
     private String title;
     private String message;
     private Object tag;
     private boolean isTwice;
 
-    public static ConfirmDialog newInstance(OnConfirmListener listener,
+    public static ConfirmDialog newInstance(ConfirmListener listener,
                                             String title, String message, Object tag) {
         ConfirmDialog fragment = new ConfirmDialog();
         fragment.listener = listener;
@@ -27,7 +27,7 @@ public class ConfirmDialog extends AppCompatDialogFragment {
         return fragment;
     }
 
-    public static ConfirmDialog newInstance(OnConfirmListener listener,
+    public static ConfirmDialog newInstance(ConfirmListener listener,
                                             String title, String message, Object tag, boolean isTwice) {
         ConfirmDialog fragment = newInstance(listener, title, message, tag);
         fragment.isTwice = isTwice;
@@ -76,7 +76,7 @@ public class ConfirmDialog extends AppCompatDialogFragment {
         dialogTwice.show();
     }
 
-    public interface OnConfirmListener {
+    public interface ConfirmListener {
         void onConfirm(Object tag);
     }
 }

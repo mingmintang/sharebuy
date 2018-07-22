@@ -9,7 +9,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Transaction;
 import com.google.firebase.firestore.WriteBatch;
-import com.jph.takephoto.model.TResult;
 
 public class Firestore {
     private static Firestore instance;
@@ -104,5 +103,13 @@ public class Firestore {
 
     public DocumentReference getUserOrderDoc(String uid, String orderId) {
         return getUserOrdersCol(uid).document(orderId);
+    }
+
+    public CollectionReference getUserEndOrdersCol(String uid) {
+        return getUserDoc(uid).collection("ends");
+    }
+
+    public DocumentReference getUserEndOrderDoc(String uid, String orderId) {
+        return getUserEndOrdersCol(uid).document(orderId);
     }
 }

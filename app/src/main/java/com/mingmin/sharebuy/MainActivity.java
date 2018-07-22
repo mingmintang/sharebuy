@@ -32,8 +32,8 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity implements FirebaseAuth.AuthStateListener,
         NavigationView.OnNavigationItemSelectedListener,
         UserOrdersFragment.OnFragmentInteractionListener,
-        OrderHistoryFragment.OnFragmentInteractionListener,
-        GroupFragment.OnFragmentInteractionListener {
+        UserEndOrdersFragment.OnFragmentInteractionListener,
+        GroupsFragment.OnFragmentInteractionListener {
 
     public static final int RC_SIGN_IN = 1;
     public static final int RC_ADD_ORDER = 2;
@@ -152,12 +152,12 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 break;
             case R.id.nav_order_history:
                 fm.beginTransaction()
-                        .replace(R.id.frame_layout, OrderHistoryFragment.newInstance(user))
+                        .replace(R.id.frame_layout, UserEndOrdersFragment.newInstance(user))
                         .commit();
                 break;
             case R.id.nav_group:
                 fm.beginTransaction()
-                        .replace(R.id.frame_layout, GroupFragment.newInstance(user))
+                        .replace(R.id.frame_layout, GroupsFragment.newInstance(user))
                         .commit();
                 break;
         }

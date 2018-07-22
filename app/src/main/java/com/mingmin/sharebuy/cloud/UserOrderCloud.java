@@ -38,11 +38,10 @@ public class UserOrderCloud {
                                 return;
                             }
                             if (documentSnapshot != null && documentSnapshot.exists()) {
-                                OrderDoc orderDoc = documentSnapshot.toObject(OrderDoc.class);
-                                Order order = new Order(orderId, orderDoc);
+                                GroupOrderDoc groupOrderDoc = documentSnapshot.toObject(GroupOrderDoc.class);
+                                Order order = new Order(orderId, groupOrderDoc);
                                 order.setMyName(myName);
                                 holder.onUserOrderChanged(order, holder);
-                                Log.d(TAG, "onEvent: " + orderId);
                             } else {
                                 Log.d(TAG, "User order is empty.");
                             }
@@ -57,7 +56,6 @@ public class UserOrderCloud {
     public void removeUserOrderListener(String orderId) {
         if (registrations.containsKey(orderId)) {
             registrations.remove(orderId);
-            Log.d(TAG, "removeUserOrderListener: " + orderId);
         }
     }
 
@@ -65,9 +63,7 @@ public class UserOrderCloud {
         if (!registrations.isEmpty()) {
             for (ListenerRegistration reg : registrations.values()) {
                 reg.remove();
-                Log.d(TAG, "removeAllListener: " + reg.toString());
             }
         }
-        Log.d(TAG, "removeAllListener: " + "no regs");
     }
 }
