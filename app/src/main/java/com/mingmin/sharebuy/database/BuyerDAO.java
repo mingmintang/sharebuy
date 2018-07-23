@@ -16,6 +16,9 @@ public interface BuyerDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertBuyer(Buyer buyer);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertBuyers(List<Buyer> buyers);
+
     @Delete
     void deleteBuyers(Buyer... buyers);
 }

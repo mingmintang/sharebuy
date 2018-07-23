@@ -6,7 +6,7 @@
     tools:context=".UserOrdersFragment">
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/order_list_recyclerView"
+        android:id="@+id/user_orders_recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 </FrameLayout>

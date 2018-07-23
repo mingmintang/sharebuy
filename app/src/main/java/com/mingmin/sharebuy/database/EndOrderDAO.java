@@ -11,11 +11,11 @@ import java.util.List;
 
 @Dao
 public interface EndOrderDAO {
-    @Query("select * from endOrders where state = 2 order by endTime DESC")
+    @Query("select * from endOrders where state = 2 order by updateTime DESC")
     List<EndOrder> getEndOrders();
 
     @Transaction
-    @Query("select * from endOrders where state = 2 order by endTime DESC")
+    @Query("select * from endOrders where state = 2 order by updateTime DESC")
     List<EndOrderAndBuyers> getEndOrdersWithBuyers();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

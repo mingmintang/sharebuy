@@ -2,32 +2,65 @@ package com.mingmin.sharebuy.database;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
+import android.arch.persistence.room.TypeConverters;
 import android.support.annotation.NonNull;
 
-@Entity(tableName = "endOrders")
-public class EndOrder {
-    public static final int STATE_CREATE = 0;
-    public static final int STATE_TAKE = 1;
-    public static final int STATE_END = 2;
-    public static final int STATE_CANCEL =3;
+import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 
+import java.util.Date;
+
+@Entity(tableName = "endOrders")
+@TypeConverters({DateTypeConverter.class})
+public class EndOrder {
     @PrimaryKey
     @NonNull
     private String id;
     private int state;
     private int maxBuyCount;
     private int buyCount;
-    private String imagePath;
     private String imageUrl;
-    private String creatorUid;
-    private String takerUid;
+    private String managerUid;
+    private String managerName;
     private String name;
     private String desc;
     private String groupId;
     private int price;
-    private int coinUnit; // index of coin_units string array
-    private long createTime;
-    private long endTime;
+    private int coinUnit;
+    private Date createTime;
+    private Date updateTime;
+
+    public void setupPersonalOrderValues(String orderId, Date updateTime, UserEndOrderDoc.Personal personalOrder) {
+        this.id = orderId;
+        this.state = Order.STATE_END;
+        this.maxBuyCount = personalOrder.getBuyCount();
+        this.buyCount = personalOrder.getBuyCount();
+        this.imageUrl = personalOrder.getImageUrl();
+        this.name = personalOrder.getName();
+        this.desc = personalOrder.getDesc();
+        this.price = personalOrder.getPrice();
+        this.coinUnit = personalOrder.getCoinUnit();
+        this.createTime = updateTime;
+        this.updateTime = updateTime;
+    }
+
+    public void setupGroupOrderValues(String orderId, String groupId, Date updateTime, GroupOrderDoc groupOrderDoc) {
+        this.id = orderId;
+        this.state = groupOrderDoc.getState();
+        this.maxBuyCount = groupOrderDoc.getMaxBuyCount();
+        this.buyCount = groupOrderDoc.getBuyCount();
+        this.imageUrl = groupOrderDoc.getImageUrl();
+        this.managerUid = groupOrderDoc.getManagerUid();
+        this.managerName = groupOrderDoc.getManagerName();
+        this.name = groupOrderDoc.getName();
+        this.desc = groupOrderDoc.getDesc();
+        this.groupId = groupId;
+        this.price = groupOrderDoc.getPrice();
+        this.coinUnit = groupOrderDoc.getCoinUnit();
+        this.createTime = groupOrderDoc.getCreateTime();
+        this.updateTime = updateTime;
+    }
 
     public String getId() {
         return id;
@@ -61,14 +94,6 @@ public class EndOrder {
         this.buyCount = buyCount;
     }
 
-    public String getImagePath() {
-        return imagePath;
-    }
-
-    public void setImagePath(String imagePath) {
-        this.imagePath = imagePath;
-    }
-
     public String getImageUrl() {
         return imageUrl;
     }
@@ -77,20 +102,20 @@ public class EndOrder {
         this.imageUrl = imageUrl;
     }
 
-    public String getCreatorUid() {
-        return creatorUid;
+    public String getManagerUid() {
+        return managerUid;
     }
 
-    public void setCreatorUid(String creatorUid) {
-        this.creatorUid = creatorUid;
+    public void setManagerUid(String managerUid) {
+        this.managerUid = managerUid;
     }
 
-    public String getTakerUid() {
-        return takerUid;
+    public String getManagerName() {
+        return managerName;
     }
 
-    public void setTakerUid(String takerUid) {
-        this.takerUid = takerUid;
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
     }
 
     public String getName() {
@@ -133,19 +158,19 @@ public class EndOrder {
         this.coinUnit = coinUnit;
     }
 
-    public long getCreateTime() {
+    public Date getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(long createTime) {
+    public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
 
-    public long getEndTime() {
-        return endTime;
+    public Date getUpdateTime() {
+        return updateTime;
     }
 
-    public void setEndTime(long endTime) {
-        this.endTime = endTime;
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
     }
 }

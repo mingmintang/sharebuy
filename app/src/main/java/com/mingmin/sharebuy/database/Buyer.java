@@ -1,17 +1,33 @@
 package com.mingmin.sharebuy.database;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.TypeConverters;
 import android.support.annotation.NonNull;
 
+import com.mingmin.sharebuy.cloud.BuyerDoc;
+
+import java.util.Date;
+
 @Entity(tableName = "buyers", primaryKeys = {"orderId", "uid"})
+@TypeConverters({DateTypeConverter.class})
 public class Buyer {
     @NonNull
     private String orderId;
     @NonNull
     private String uid;
+    private String name;
     private int orderCount;
-    private long orderTime;
+    private Date orderTime;
     private int buyCount;
+
+    public void setupBuyerDocValues(String orderId, String uid, BuyerDoc buyerDoc) {
+        this.orderId = orderId;
+        this.uid = uid;
+        this.name = buyerDoc.getName();
+        this.orderCount = buyerDoc.getOrderCount();
+        this.orderTime = buyerDoc.getOrderTime();
+        this.buyCount = buyerDoc.getBuyCount();
+    }
 
     public String getOrderId() {
         return orderId;
@@ -29,6 +45,14 @@ public class Buyer {
         this.uid = uid;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public int getOrderCount() {
         return orderCount;
     }
@@ -37,11 +61,11 @@ public class Buyer {
         this.orderCount = orderCount;
     }
 
-    public long getOrderTime() {
+    public Date getOrderTime() {
         return orderTime;
     }
 
-    public void setOrderTime(long orderTime) {
+    public void setOrderTime(Date orderTime) {
         this.orderTime = orderTime;
     }
 
