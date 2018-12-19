@@ -16,6 +16,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.PersonalOrderDoc;
 import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.SelectGroupDialog;
@@ -187,11 +188,11 @@ public class AddOrderActivity extends AppCompatActivity implements
     }
 
     private void buildPersonalOrder() {
-        UserEndOrderDoc.Personal personalOrder = editOrderFragment.getPersoanlOrder();
+        PersonalOrderDoc personalOrder = editOrderFragment.getPersoanlOrder();
         Clouds.getInstance().buildPersonalOrder(personalOrder, imagePath, user.getUid())
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
-                    public void onSuccess(DocumentReference documentReference) {
+                    public void onSuccess(Void aVoid) {
                         setResult(RESULT_OK);
                         finish();
                     }

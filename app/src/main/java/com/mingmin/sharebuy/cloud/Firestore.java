@@ -112,4 +112,12 @@ public class Firestore {
     public DocumentReference getUserEndOrderDoc(String uid, String orderId) {
         return getUserEndOrdersCol(uid).document(orderId);
     }
+
+    public CollectionReference getUserPersonalOrdersCol(String uid) {
+        return getUserDoc(uid).collection("personals");
+    }
+
+    public DocumentReference getUserPersonalOrderDoc(String uid, String orderId) {
+        return getUserPersonalOrdersCol(uid).document(orderId);
+    }
 }

@@ -1,6 +1,8 @@
 package com.mingmin.sharebuy;
 
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.PersonalOrderDoc;
+import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 import com.mingmin.sharebuy.cloud.UserOrderDoc;
 
 import java.util.Date;
@@ -67,17 +69,6 @@ public class Order {
     public Order(String orderId, GroupOrderDoc groupOrderDoc) {
         id = orderId;
         buyers = new HashMap<>();
-        setupValues(groupOrderDoc);
-    }
-
-    public Order(String id, UserOrderDoc userOrderDoc) {
-        this.id = id;
-        updateTime = userOrderDoc.getUpdateTime();
-        myName = userOrderDoc.getMyName();
-        groupId = userOrderDoc.getGroupId();
-    }
-
-    private void setupValues(GroupOrderDoc groupOrderDoc) {
         state = groupOrderDoc.getState();
         maxBuyCount = groupOrderDoc.getMaxBuyCount();
         buyCount = groupOrderDoc.getBuyCount();
@@ -91,6 +82,34 @@ public class Order {
         coinUnit = groupOrderDoc.getCoinUnit();
         createTime = groupOrderDoc.getCreateTime();
         updateTime = groupOrderDoc.getUpdateTime();
+    }
+
+    public Order(String orderId, Date createTime, Date updateTime, PersonalOrderDoc personalOrderDoc) {
+        id = orderId;
+        state = Order.STATE_END;
+        maxBuyCount = personalOrderDoc.getBuyCount();
+        buyCount = personalOrderDoc.getBuyCount();
+        imageUrl = personalOrderDoc.getImageUrl();
+        name = personalOrderDoc.getName();
+        desc = personalOrderDoc.getDesc();
+        price = personalOrderDoc.getPrice();
+        coinUnit = personalOrderDoc.getCoinUnit();
+        this.createTime = createTime;
+        this.updateTime = updateTime;
+    }
+
+    public Order(String orderId, UserOrderDoc userOrderDoc) {
+        id = orderId;
+        updateTime = userOrderDoc.getUpdateTime();
+        myName = userOrderDoc.getMyName();
+        groupId = userOrderDoc.getGroupId();
+    }
+
+    public Order(String orderId, UserEndOrderDoc userEndOrderDoc) {
+        id = orderId;
+        createTime = userEndOrderDoc.getCreateTime();
+        updateTime = userEndOrderDoc.getUpdateTime();
+        groupId = userEndOrderDoc.getGroupId();
     }
 
     public int getState() {

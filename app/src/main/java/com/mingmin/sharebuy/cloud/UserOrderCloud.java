@@ -7,6 +7,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.User;
 import com.mingmin.sharebuy.UserOrderRecyclerAdapter;
 
 import java.util.HashMap;
@@ -22,10 +23,10 @@ public class UserOrderCloud {
     }
 
     public interface UserOrderListener {
-        void onUserOrderChanged(Order order, UserOrderRecyclerAdapter.OrderHolder holder);
+        void onUserOrderChanged(Order order, UserOrderRecyclerAdapter.OrderHolder holder, User user);
     }
 
-    public void addUserOrderListener(String uid, final String myName, String groupId, final String orderId, final UserOrderRecyclerAdapter.OrderHolder holder) {
+    public void addUserOrderListener(final User user, final String myName, String groupId, final String orderId, final UserOrderRecyclerAdapter.OrderHolder holder) {
         if (registrations.containsKey(orderId)) {
             return;
         }
@@ -42,7 +43,7 @@ public class UserOrderCloud {
                             GroupOrderDoc groupOrderDoc = documentSnapshot.toObject(GroupOrderDoc.class);
                             Order order = new Order(orderId, groupOrderDoc);
                             order.setMyName(myName);
-                            holder.onUserOrderChanged(order, holder);
+                            holder.onUserOrderChanged(order, holder, user);
                         } else {
                             Log.d(TAG, "User order is empty.");
                         }
@@ -53,7 +54,9 @@ public class UserOrderCloud {
     }
 
     public void removeUserOrderListener(String orderId) {
-        if (registrations.containsKey(orderId)) {
+        ListenerRegistration reg = registrations.get(orderId);
+        if (reg != null) {
+            reg.remove();
             registrations.remove(orderId);
         }
     }
@@ -63,6 +66,7 @@ public class UserOrderCloud {
             for (ListenerRegistration reg : registrations.values()) {
                 reg.remove();
             }
+            registrations.clear();
         }
     }
 }

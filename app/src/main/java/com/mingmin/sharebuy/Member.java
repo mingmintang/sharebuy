@@ -37,6 +37,14 @@ public class Member implements Serializable {
         return name;
     }
 
+    public String getName(String myUid) {
+        if (uid.equals(myUid)) {
+            return name + "(我)";
+        } else {
+            return name;
+        }
+    }
+
     public void setName(String name) {
         this.name = name;
     }

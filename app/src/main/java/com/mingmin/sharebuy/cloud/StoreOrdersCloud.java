@@ -24,13 +24,13 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-public class UserEndOrdersCloud {
+public class StoreOrdersCloud {
     private final String TAG = getClass().getSimpleName();
     private Firestore fs;
     private Db db;
     private ListenerRegistration registration;
 
-    public UserEndOrdersCloud(Context context) {
+    public StoreOrdersCloud(Context context) {
         fs = Firestore.getInstance();
         db = Db.getInstance(context);
     }
@@ -60,14 +60,7 @@ public class UserEndOrdersCloud {
                                 if (groupId != null) {
                                     storeGroupOrderData(orderId, groupId, updateTime);
                                 } else {
-                                    UserEndOrderDoc.Personal personalOrder = new UserEndOrderDoc.Personal();
-                                    personalOrder.setBuyCount(snap.getLong("personal.buyCount").intValue());
-                                    personalOrder.setImageUrl(snap.getString("personal.imageUrl"));
-                                    personalOrder.setName(snap.getString("personal.name"));
-                                    personalOrder.setDesc(snap.getString("personal.desc"));
-                                    personalOrder.setPrice(snap.getLong("personal.price").intValue());
-                                    personalOrder.setCoinUnit(snap.getLong("personal.coinUnit").intValue());
-                                    storePersonalOrderData(orderId, updateTime, personalOrder);
+//                                    storePersonalOrderData();
                                 }
                             }
                         }
@@ -82,12 +75,12 @@ public class UserEndOrdersCloud {
         }
     }
 
-    private void storePersonalOrderData(final String orderId, final Date updateTime, final UserEndOrderDoc.Personal personalOrder) {
+    private void storePersonalOrderData(final String orderId, final Date updateTime, final PersonalOrderDoc personalOrderDoc) {
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 EndOrder endOrder = new EndOrder();
-                endOrder.setupPersonalOrderValues(orderId, updateTime, personalOrder);
+                endOrder.setupPersonalOrderValues(orderId, updateTime, personalOrderDoc);
                 db.endOrderDAO().insertEndOrder(endOrder);
             }
         });

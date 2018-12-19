@@ -40,7 +40,6 @@ public class SelectOrderImageFragment extends TakePhotoFragment {
         View view = inflater.inflate(R.layout.fragment_select_order_image, container, false);
         imageView = view.findViewById(R.id.select_order_image);
         Button btnCamera = view.findViewById(R.id.select_order_image_camera);
-        btnCamera.setEnabled(false);
         btnCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -11,6 +11,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -33,6 +34,7 @@ import com.mingmin.sharebuy.utils.InternetCheck;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Clouds {
@@ -161,7 +163,8 @@ public class Clouds {
                                 String name = documentSnapshot.getString("name");
                                 String managerUid = documentSnapshot.getString("managerUid");
                                 String managerName = documentSnapshot.getString("managerName");
-                                Group group = new Group(documentSnapshot.getId(), name, managerUid, managerName);
+                                String myName = documentSnapshot.getString("myName");
+                                Group group = new Group(documentSnapshot.getId(), name, managerUid, managerName, myName);
                                 groups.add(group);
                             }
                         } else {
@@ -526,11 +529,11 @@ public class Clouds {
         return buildGroupOrderTask;
     }
 
-    public Task<DocumentReference> buildPersonalOrder(final UserEndOrderDoc.Personal personalOrder, final String imagePath, final String uid) {
+    public Task<Void> buildPersonalOrder(final PersonalOrderDoc personalOrderDoc, final String imagePath, final String uid) {
         final StorageReference imagePathRef = Storage.getInstance().createOrderImagePathRef();
         final File imageFile = new File(imagePath);
         UploadTask uploadImageTask = imagePathRef.putFile(Uri.fromFile(imageFile));
-        Task<DocumentReference> buildPersonalOrderTask = uploadImageTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+        Task<Void> buildPersonalOrderTask = uploadImageTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
             @Override
             public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
                 if (!task.isSuccessful()) {
@@ -538,17 +541,28 @@ public class Clouds {
                 }
                 return imagePathRef.getDownloadUrl();
             }
-        }).continueWithTask(new Continuation<Uri, Task<DocumentReference>>() {
+        }).continueWithTask(new Continuation<Uri, Task<Void>>() {
             @Override
-            public Task<DocumentReference> then(@NonNull Task<Uri> task) throws Exception {
+            public Task<Void> then(@NonNull Task<Uri> task) throws Exception {
                 imageFile.delete();
                 if (!task.isSuccessful()) {
                     throw task.getException();
                 }
                 Uri downloadUri = task.getResult();
-                personalOrder.setImageUrl(downloadUri.toString());
-                UserEndOrderDoc userEndOrderDoc = new UserEndOrderDoc(personalOrder);
-                return fs.getUserEndOrdersCol(uid).add(userEndOrderDoc);
+                personalOrderDoc.setImageUrl(downloadUri.toString());
+
+                WriteBatch batch = fs.getWriteBatch();
+                // Create order id
+                DocumentReference personalOrderRef = fs.getUserPersonalOrdersCol(uid).document();
+                String orderId = personalOrderRef.getId();
+
+                DocumentReference userEndOrderRef = fs.getUserEndOrderDoc(uid, orderId);
+                UserEndOrderDoc userEndOrderDoc = new UserEndOrderDoc();
+
+                batch.set(personalOrderRef, personalOrderDoc);
+                batch.set(userEndOrderRef, userEndOrderDoc);
+
+                return batch.commit();
             }
         });
 
@@ -636,37 +650,96 @@ public class Clouds {
     }
 
     public Query getUserOrdersQuery(String uid) {
-        return fs.getUserOrdersCol(uid).orderBy("updateTime");
+        return fs.getUserOrdersCol(uid).orderBy("updateTime", Query.Direction.DESCENDING);
     }
 
     public Task<Void> endGroupOrder(final String groupId, final String orderId, final String uid) {
         final DocumentReference groupOrderDoc = fs.getGroupOrderDoc(groupId, orderId);
-        Task<Void> endGroupOrderTask = fs.runTransaction(new Transaction.Function<Void>() {
+        Task<Void> endGroupOrderTask = fs.runTransaction(new Transaction.Function<Date>() {
             @Nullable
             @Override
-            public Void apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+            public Date apply(@NonNull Transaction transaction) throws FirebaseFirestoreException {
+                Date createTime = transaction.get(groupOrderDoc).getDate("createTime");
                 transaction.update(groupOrderDoc, "state", Order.STATE_END,
                         "updateTime", FieldValue.serverTimestamp());
-                return null;
+                return createTime;
             }
-        }).continueWithTask(new Continuation<Void, Task<Void>>() {
+        }).continueWithTask(new Continuation<Date, Task<Void>>() {
             @Override
-            public Task<Void> then(@NonNull Task<Void> task) throws Exception {
+            public Task<Void> then(@NonNull Task<Date> task) throws Exception {
                 if (!task.isSuccessful()) {
                     throw task.getException();
                 }
-                WriteBatch batch = fs.getWriteBatch();
-                DocumentReference userOrderRef = fs.getUserOrderDoc(uid, orderId);
-                DocumentReference userEndOrderRef = fs.getUserEndOrderDoc(uid, orderId);
+                final Date createTime = task.getResult();
+                final UserEndOrderDoc userEndOrderDoc = new UserEndOrderDoc(groupId, createTime);
 
-                batch.delete(userOrderRef);
-                UserEndOrderDoc userEndOrderDoc = new UserEndOrderDoc(groupId);
-                batch.set(userEndOrderRef, userEndOrderDoc);
+                final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+                fs.getGroupOrderBuyersCol(groupId, orderId).get()
+                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                            @Override
+                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                WriteBatch batch = fs.getWriteBatch();
+                                if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                                    for (DocumentSnapshot snap : queryDocumentSnapshots.getDocuments()) {
+                                        String uid = snap.getId();
+                                        DocumentReference userOrderRef = fs.getUserOrderDoc(uid, orderId);
+                                        DocumentReference userEndOrderRef = fs.getUserEndOrderDoc(uid, orderId);
+                                        batch.delete(userOrderRef);
+                                        batch.set(userEndOrderRef, userEndOrderDoc);
+                                    }
+                                }
+                                batch.commit().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        source.setResult(aVoid);
+                                    }
+                                }).addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        source.setException(e);
+                                    }
+                                });
 
-                return batch.commit();
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                source.setException(e);
+                            }
+                        });
+
+                return source.getTask();
             }
         });
 
         return endGroupOrderTask;
+    }
+
+    public Query getUserEndOrdersQuery(String uid) {
+        return fs.getUserEndOrdersCol(uid).orderBy("updateTime", Query.Direction.DESCENDING);
+    }
+
+    public Task<Boolean> checkOrderBuyerExist(String groupId, String orderId, String buyerId) {
+        final TaskCompletionSource<Boolean> source = new TaskCompletionSource<>();
+        fs.getGroupOrderBuyerDoc(groupId, orderId, buyerId).get()
+                .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                    @Override
+                    public void onSuccess(DocumentSnapshot documentSnapshot) {
+                        if (documentSnapshot != null && documentSnapshot.exists()) {
+                            source.setResult(true);
+                        } else {
+                            source.setResult(false);
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        source.setException(e);
+                    }
+                });
+
+        return source.getTask();
     }
 }

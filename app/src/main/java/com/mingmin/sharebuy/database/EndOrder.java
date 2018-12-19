@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 
 import com.mingmin.sharebuy.Order;
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.PersonalOrderDoc;
 import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 
 import java.util.Date;
@@ -31,16 +32,16 @@ public class EndOrder {
     private Date createTime;
     private Date updateTime;
 
-    public void setupPersonalOrderValues(String orderId, Date updateTime, UserEndOrderDoc.Personal personalOrder) {
+    public void setupPersonalOrderValues(String orderId, Date updateTime, PersonalOrderDoc personalOrderDoc) {
         this.id = orderId;
         this.state = Order.STATE_END;
-        this.maxBuyCount = personalOrder.getBuyCount();
-        this.buyCount = personalOrder.getBuyCount();
-        this.imageUrl = personalOrder.getImageUrl();
-        this.name = personalOrder.getName();
-        this.desc = personalOrder.getDesc();
-        this.price = personalOrder.getPrice();
-        this.coinUnit = personalOrder.getCoinUnit();
+        this.maxBuyCount = personalOrderDoc.getBuyCount();
+        this.buyCount = personalOrderDoc.getBuyCount();
+        this.imageUrl = personalOrderDoc.getImageUrl();
+        this.name = personalOrderDoc.getName();
+        this.desc = personalOrderDoc.getDesc();
+        this.price = personalOrderDoc.getPrice();
+        this.coinUnit = personalOrderDoc.getCoinUnit();
         this.createTime = updateTime;
         this.updateTime = updateTime;
     }

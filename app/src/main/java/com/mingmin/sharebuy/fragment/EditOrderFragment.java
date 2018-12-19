@@ -18,6 +18,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.mingmin.sharebuy.R;
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.cloud.PersonalOrderDoc;
 import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 
 import java.io.File;
@@ -196,9 +197,9 @@ public class EditOrderFragment extends Fragment {
         return groupOrderDoc;
     }
 
-    public UserEndOrderDoc.Personal getPersoanlOrder() {
+    public PersonalOrderDoc getPersoanlOrder() {
         EditedOrder editedOrder = new EditedOrder();
-        UserEndOrderDoc.Personal personalOrder = new UserEndOrderDoc.Personal(editedOrder.buyCount,
+        PersonalOrderDoc personalOrder = new PersonalOrderDoc(editedOrder.buyCount,
                 editedOrder.name, editedOrder.desc, editedOrder.price, editedOrder.coinUnit);
         return personalOrder;
     }

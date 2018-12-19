@@ -10,14 +10,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.mingmin.sharebuy.cloud.UserEndOrdersCloud;
+import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.cloud.Clouds;
+import com.mingmin.sharebuy.cloud.StoreOrdersCloud;
 
-import java.util.Date;
-
-public class UserEndOrdersFragment extends Fragment {
+public class UserEndOrdersFragment extends Fragment implements UserEndOrderRecyclerAdapter.UserEndOrderRecyclerAdapterListener {
     private User user;
     private OnFragmentInteractionListener mListener;
-    private UserEndOrdersCloud cloud;
+    private StoreOrdersCloud cloud;
+    private UserEndOrderRecyclerAdapter adapter;
 
     public static UserEndOrdersFragment newInstance(User user) {
         Bundle args = new Bundle();
@@ -31,7 +32,7 @@ public class UserEndOrdersFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         user = (User) getArguments().getSerializable("user");
-        cloud = new UserEndOrdersCloud(getContext());
+        cloud = new StoreOrdersCloud(getContext());
     }
 
     @Override
@@ -69,13 +70,18 @@ public class UserEndOrdersFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        cloud.addUserEndOrdersListener(user.getUid(), new Date(0));
+        if (adapter != null) {
+            adapter.startListening();
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        cloud.removeUserEndOrdersListener();
+        if (adapter != null) {
+            adapter.stopListening();
+            adapter.removeAllListener();
+        }
     }
 
     public interface OnFragmentInteractionListener {
@@ -87,5 +93,15 @@ public class UserEndOrdersFragment extends Fragment {
         RecyclerView recyclerView = view.findViewById(R.id.user_end_orders_recyclerView);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+
+        Query query = Clouds.getInstance().getUserEndOrdersQuery(user.getUid());
+        adapter = new UserEndOrderRecyclerAdapter(getContext(), this, user.getUid(), query);
+        recyclerView.setAdapter(adapter);
+        adapter.startListening();
+    }
+
+    @Override
+    public void onUserEndOrderItemViewClicked(Order order) {
+
     }
 }
