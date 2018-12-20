@@ -44,16 +44,16 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.9" />
 
-    <Button
-        android:id="@+id/add_order_earlyOrder"
-        android:layout_width="80dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:onClick="askForHelpBuy"
-        android:text="找人幫買"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/add_order_createOrder"
-        app:layout_constraintTop_toTopOf="@+id/guideline9" />
+    <!--<Button-->
+        <!--android:id="@+id/add_order_earlyOrder"-->
+        <!--android:layout_width="80dp"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_marginEnd="8dp"-->
+        <!--android:onClick="askForHelpBuy"-->
+        <!--android:text="找人幫買"-->
+        <!--app:layout_constraintBottom_toBottomOf="parent"-->
+        <!--app:layout_constraintEnd_toStartOf="@+id/add_order_createOrder"-->
+        <!--app:layout_constraintTop_toTopOf="@+id/guideline9" />-->
 
     <Button
         android:id="@+id/add_order_previous"

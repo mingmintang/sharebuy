@@ -322,9 +322,7 @@ public class GroupsFragment extends Fragment implements AddGroupDialog.AddGroupL
 
     @Override
     public void onOrderItemViewClicked(Order order, Group group) {
-        if (group.getManagerUid().equals(user.getUid())) {
-
-        } else {
+        if (order.getState() == Order.STATE_TAKE) {
             BuyOrderDialog.newInstance(this, order, group)
                     .show(getFragmentManager(), "buyOrderDialog");
         }

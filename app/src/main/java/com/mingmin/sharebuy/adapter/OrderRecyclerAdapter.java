@@ -133,7 +133,14 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
                     }
                 });
             }
-            holder.tvStatus.setText(order.getManagerName() + "接單");
+            switch (order.getState()) {
+                case Order.STATE_TAKE:
+                    holder.tvStatus.setText(order.getManagerName() + context.getString(R.string.take_order));
+                    break;
+                case Order.STATE_END:
+                    holder.tvStatus.setText(order.getManagerName() + context.getString(R.string.order_ended));
+                    break;
+            }
         } else {
             Clouds.getInstance().checkOrderBuyerExist(order.getGroupId(), order.getId(), user.getUid())
                     .addOnSuccessListener(new OnSuccessListener<Boolean>() {
@@ -141,7 +148,7 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
                         public void onSuccess(Boolean aBoolean) {
                             String status;
                             if (aBoolean) {
-                                status = order.getManagerName() + "接單\n已下單購買";
+                                status = order.getManagerName() + context.getString(R.string.take_order_bought);
                             } else {
                                 holder.itemView.setOnClickListener(new View.OnClickListener() {
                                     @Override

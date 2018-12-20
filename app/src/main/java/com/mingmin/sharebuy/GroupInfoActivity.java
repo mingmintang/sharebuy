@@ -17,6 +17,7 @@ import com.mingmin.sharebuy.item.Group;
 import com.mingmin.sharebuy.item.Member;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class GroupInfoActivity extends AppCompatActivity {
     private final String TAG = getClass().getSimpleName();
@@ -28,6 +29,7 @@ public class GroupInfoActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_info);
+        Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.group_info);
 
         group = (Group) getIntent().getSerializableExtra("group");
 

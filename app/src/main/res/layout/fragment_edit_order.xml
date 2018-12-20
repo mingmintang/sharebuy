@@ -39,7 +39,7 @@
                 android:id="@+id/edit_order_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="商品名稱"
+                android:hint="@string/goods_name"
                 android:singleLine="true" />
         </android.support.design.widget.TextInputLayout>
 
@@ -58,7 +58,7 @@
                 android:id="@+id/edit_order_desc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="補充說明"
+                android:hint="@string/description"
                 android:singleLine="true" />
 
         </android.support.design.widget.TextInputLayout>
@@ -77,7 +77,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="6"
-                android:hint="價格"
+                android:hint="@string/price"
                 android:inputType="number"
                 android:selectAllOnFocus="true"
                 android:singleLine="true" />
@@ -108,7 +108,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="4"
-                android:hint="自買數量"
+                android:hint="@string/buy_order"
                 android:inputType="number"
                 android:selectAllOnFocus="true"
                 android:singleLine="true" />
@@ -127,7 +127,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="4"
-                android:hint="限定數量"
+                android:hint="@string/max_count"
                 android:inputType="number"
                 android:selectAllOnFocus="true"
                 android:singleLine="true" />
@@ -138,7 +138,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:text="小計"
+            android:text="@string/amount"
             android:textAppearance="@android:style/TextAppearance.Medium"
             app:layout_constraintEnd_toStartOf="@+id/edit_order_amount"
             app:layout_constraintTop_toTopOf="@+id/edit_order_amount" />
@@ -148,12 +148,13 @@
             android:layout_width="wrap_content"
             android:layout_height="0dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="24dp"
-            android:ems="6"
-            android:gravity="left"
+            android:layout_marginBottom="8dp"
+            android:ems="5"
+            android:gravity="start"
+            android:ellipsize="end"
             android:textAppearance="@android:style/TextAppearance.Medium"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/edit_order_maxCount_layout" />
+            app:layout_constraintBottom_toBottomOf="@+id/edit_order_maxCount_layout"
+            app:layout_constraintEnd_toEndOf="parent" />
 
     </android.support.constraint.ConstraintLayout>
 </FrameLayout>

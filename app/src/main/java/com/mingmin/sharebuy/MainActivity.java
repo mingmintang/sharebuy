@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            if (getCurrentNavigationItem() != R.id.nav_order) {
+            if (getCurrentNavigationItem() != R.id.nav_group) {
                 goToNavItemHome();
             } else {
                 super.onBackPressed();
@@ -144,14 +144,14 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             return false;
         }
         switch (id) {
+            case R.id.nav_group:
+                switchGroupsFragment();
+                break;
             case R.id.nav_order:
                 switchUserOrdersFragment();
                 break;
             case R.id.nav_order_ended:
                 switchUserEndOrdersFragment();
-                break;
-            case R.id.nav_group:
-                switchGroupsFragment();
                 break;
         }
         drawer.closeDrawer(GravityCompat.START);
@@ -234,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     private void goToNavItemHome() {
-        goToNavItem(R.id.nav_order);
+        goToNavItem(R.id.nav_group);
     }
 
     private void goToNavItem(int itemId) {
@@ -278,6 +278,8 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
             case RC_SIGN_IN:
                 if (resultCode == RESULT_OK) {
                     initAfterSignIn();
+                } else {
+                    finishAfterTransition();
                 }
                 break;
             case RC_ADD_ORDER:

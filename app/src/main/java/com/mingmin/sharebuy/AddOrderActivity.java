@@ -25,6 +25,8 @@ import com.mingmin.sharebuy.item.PersonalOrderResult;
 import com.mingmin.sharebuy.item.User;
 import com.tbruyelle.rxpermissions2.RxPermissions;
 
+import java.util.Objects;
+
 import io.reactivex.functions.Consumer;
 
 public class AddOrderActivity extends AppCompatActivity implements
@@ -32,7 +34,7 @@ public class AddOrderActivity extends AppCompatActivity implements
         EditOrderFragment.OnFragmentInteractionListener, ViewPager.OnPageChangeListener, SelectGroupDialog.SelectGroupListener, ConfirmDialog.ConfirmListener {
 
     private ViewPager viewPager;
-    private Button btnAskFor;
+//    private Button btnAskFor;
     private Button btnHelpBuy;
     private Button btnEndOrder;
     private Button ibPrevious;
@@ -45,6 +47,8 @@ public class AddOrderActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_order);
+
+        Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.add_order);
 
         user = (User) getIntent().getSerializableExtra("user");
         initViews();
@@ -93,8 +97,8 @@ public class AddOrderActivity extends AppCompatActivity implements
         viewPager.addOnPageChangeListener(this);
         viewPager.setAdapter(new AddOrderPagerAdapter(getSupportFragmentManager()));
 
-        btnAskFor = findViewById(R.id.add_order_earlyOrder);
-        btnAskFor.setEnabled(false);
+//        btnAskFor = findViewById(R.id.add_order_earlyOrder);
+//        btnAskFor.setEnabled(false);
         btnHelpBuy = findViewById(R.id.add_order_createOrder);
         btnEndOrder = findViewById(R.id.add_order_endOrder);
         btnEndOrder.setEnabled(false);
@@ -108,14 +112,14 @@ public class AddOrderActivity extends AppCompatActivity implements
     private void switchVisibleByPage(int pagePosition) {
         switch (pagePosition) {
             case 0:
-                btnAskFor.setVisibility(View.GONE);
+//                btnAskFor.setVisibility(View.GONE);
                 btnHelpBuy.setVisibility(View.GONE);
                 btnEndOrder.setVisibility(View.GONE);
                 ibPrevious.setVisibility(View.GONE);
                 ibNext.setVisibility(View.VISIBLE);
                 break;
             case 1:
-                btnAskFor.setVisibility(View.VISIBLE);
+//                btnAskFor.setVisibility(View.VISIBLE);
                 btnHelpBuy.setVisibility(View.VISIBLE);
                 btnEndOrder.setVisibility(View.VISIBLE);
                 ibPrevious.setVisibility(View.VISIBLE);
@@ -134,9 +138,9 @@ public class AddOrderActivity extends AppCompatActivity implements
 
     @Override
     public void onCountEqualZero() {
-        if (btnAskFor.isEnabled()) {
-            btnAskFor.setEnabled(false);
-        }
+//        if (btnAskFor.isEnabled()) {
+//            btnAskFor.setEnabled(false);
+//        }
         if (btnEndOrder.isEnabled()) {
             btnEndOrder.setEnabled(false);
         }
@@ -144,18 +148,16 @@ public class AddOrderActivity extends AppCompatActivity implements
 
     @Override
     public void onCountGreaterThanZero() {
-        if (!btnAskFor.isEnabled()) {
-            btnAskFor.setEnabled(true);
-        }
+//        if (!btnAskFor.isEnabled()) {
+//            btnAskFor.setEnabled(true);
+//        }
         if (!btnEndOrder.isEnabled()) {
             btnEndOrder.setEnabled(true);
         }
     }
 
     @Override
-    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-    }
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) { }
 
     @Override
     public void onPageSelected(int position) {
@@ -164,15 +166,15 @@ public class AddOrderActivity extends AppCompatActivity implements
             case 0:
                 break;
             case 1:
-                editOrderFragment.setImagePath(imagePath);
+                if (imagePath != null) {
+                    editOrderFragment.setImagePath(imagePath);
+                }
                 break;
         }
     }
 
     @Override
-    public void onPageScrollStateChanged(int state) {
-
-    }
+    public void onPageScrollStateChanged(int state) { }
 
     @Override
     public void onSelectGroupConfirm(Group group, Object tag) {

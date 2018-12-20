@@ -22,6 +22,7 @@ import com.mingmin.sharebuy.item.Group;
 import com.mingmin.sharebuy.item.Member;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class GroupManageActivity extends AppCompatActivity implements ConfirmDialog.ConfirmListener,
         Clouds.GroupMembersListener {
@@ -34,6 +35,7 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_manage);
+        Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.manage_group);
 
         group = (Group) getIntent().getSerializableExtra("group");
         selectedItemId = getIntent().getIntExtra("selectedItemId", R.id.group_manage_nav_joined);
@@ -73,7 +75,8 @@ public class GroupManageActivity extends AppCompatActivity implements ConfirmDia
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.activity_group_manage_menu, menu);
+        // delete group has not implemented
+//        getMenuInflater().inflate(R.menu.activity_group_manage_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
