@@ -2,9 +2,10 @@ package com.mingmin.sharebuy.cloud;
 
 import com.google.firebase.firestore.ServerTimestamp;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class GroupOrderDoc {
+public class GroupOrderDoc implements Serializable {
     private int state;
     private int maxBuyCount;
     private int buyCount;

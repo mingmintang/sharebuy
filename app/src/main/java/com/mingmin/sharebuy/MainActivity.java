@@ -14,18 +14,28 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.mingmin.sharebuy.cloud.Clouds;
+import com.mingmin.sharebuy.fragment.GroupsFragment;
+import com.mingmin.sharebuy.fragment.UserEndOrdersFragment;
+import com.mingmin.sharebuy.fragment.UserOrdersFragment;
+import com.mingmin.sharebuy.item.Group;
+import com.mingmin.sharebuy.item.GroupOrderResult;
+import com.mingmin.sharebuy.item.PersonalOrderResult;
+import com.mingmin.sharebuy.item.User;
 
 import java.util.Arrays;
 
@@ -39,15 +49,22 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     public static final int RC_ADD_ORDER = 2;
     public static final int RC_GROUP_MANAGE = 3;
     public static final int RC_GROUP_INFO = 4;
+    public static final int TYPE_GROUP_ORDER = 10;
+    public static final int TYPE_PERSONAL_ORDER = 11;
+    public static final int TYPE_BACK_PRESSED = 12;
     private final String TAG = getClass().getSimpleName();
     private FirebaseUser fuser;
     private DrawerLayout drawer;
     private TextView tvAccount;
     private NavigationView navigationView;
+    private FrameLayout fragment;
+    private ProgressBar loading;
+    private FloatingActionButton fab;
+    private Toolbar toolbar;
     private FirebaseAuth firebaseAuth;
     private User user;
     private FragmentManager fm;
-    private int backToNavItemId;
+    private int backToNavItemId = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +74,10 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     }
 
     private void initView() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -80,6 +97,9 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         navigationView.setNavigationItemSelectedListener(this);
 
         tvAccount = navigationView.getHeaderView(0).findViewById(R.id.main_nav_userAccount);
+
+        fragment = findViewById(R.id.frame_layout);
+        loading = findViewById(R.id.loading);
     }
 
     @Override
@@ -94,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
     protected void onStop() {
         super.onStop();
         firebaseAuth.removeAuthStateListener(this);
+        saveCurrentNavItemId();
     }
 
     @Override
@@ -114,28 +135,6 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -146,23 +145,42 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         }
         switch (id) {
             case R.id.nav_order:
-                fm.beginTransaction()
-                        .replace(R.id.frame_layout, UserOrdersFragment.newInstance(user))
-                        .commit();
+                switchUserOrdersFragment();
                 break;
-            case R.id.nav_order_history:
-                fm.beginTransaction()
-                        .replace(R.id.frame_layout, UserEndOrdersFragment.newInstance(user))
-                        .commit();
+            case R.id.nav_order_ended:
+                switchUserEndOrdersFragment();
                 break;
             case R.id.nav_group:
-                fm.beginTransaction()
-                        .replace(R.id.frame_layout, GroupsFragment.newInstance(user))
-                        .commit();
+                switchGroupsFragment();
                 break;
         }
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void saveCurrentNavItemId() {
+        backToNavItemId = navigationView.getId();
+    }
+
+    private void switchUserOrdersFragment() {
+        fm.beginTransaction()
+                .replace(R.id.frame_layout, UserOrdersFragment.newInstance(user))
+                .commit();
+        toolbar.setTitle(R.string.order);
+    }
+
+    private void switchUserEndOrdersFragment() {
+        fm.beginTransaction()
+                .replace(R.id.frame_layout, UserEndOrdersFragment.newInstance(user))
+                .commit();
+        toolbar.setTitle(R.string.order_ended);
+    }
+
+    private void switchGroupsFragment() {
+        fm.beginTransaction()
+                .replace(R.id.frame_layout, GroupsFragment.newInstance(user))
+                .commit();
+        toolbar.setTitle(R.string.group);
     }
 
     private int getCurrentNavigationItem() {
@@ -224,6 +242,11 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
         navigationView.setCheckedItem(itemId);
     }
 
+    private boolean backToNavItemByFlag(int navItemId) {
+        backToNavItemId = navItemId;
+        return backToNavItemByFlag();
+    }
+
     private boolean backToNavItemByFlag() {
         if (backToNavItemId != 0) {
             goToNavItem(backToNavItemId);
@@ -259,10 +282,21 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 break;
             case RC_ADD_ORDER:
                 if (resultCode == RESULT_OK) {
-                    Snackbar.make(navigationView, "建立訂單成功", Snackbar.LENGTH_LONG).show();
-                }
-                if (resultCode == RESULT_CANCELED) {
-                    Snackbar.make(navigationView, "建立訂單失敗", Snackbar.LENGTH_LONG).show();
+                    showLoading(true);
+                    int type = data.getIntExtra("type", 0);
+                    switch (type) {
+                        case TYPE_GROUP_ORDER:
+                            GroupOrderResult groupOrderResult = (GroupOrderResult) data.getSerializableExtra("result");
+                            buildGroupOrder(groupOrderResult);
+                            break;
+                        case TYPE_PERSONAL_ORDER:
+                            PersonalOrderResult personalOrderResult = (PersonalOrderResult) data.getSerializableExtra("result");
+                            buildPersonalOrder(personalOrderResult);
+                            break;
+                        case TYPE_BACK_PRESSED:
+                            backToNavItemByFlag();
+                            break;
+                    }
                 }
                 break;
             case RC_GROUP_MANAGE:
@@ -276,6 +310,53 @@ public class MainActivity extends AppCompatActivity implements FirebaseAuth.Auth
                 }
                 break;
         }
+    }
+
+    private void showLoading(boolean isLoading) {
+        if (isLoading) {
+            loading.setVisibility(View.VISIBLE);
+            fragment.setVisibility(View.GONE);
+            fab.hide();
+            toolbar.setVisibility(View.GONE);
+        } else {
+            loading.setVisibility(View.GONE);
+            fragment.setVisibility(View.VISIBLE);
+            fab.show();
+            toolbar.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void buildGroupOrder(GroupOrderResult result) {
+        Clouds.getInstance().buildGroupOrder(result.orderState, result.imagePath, result.uid,
+                result.groupOrderDoc, result.group)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        backToNavItemByFlag(R.id.nav_group);
+                        showLoading(false);
+                        if (task.isSuccessful()) {
+                            Snackbar.make(navigationView, "建立訂單成功", Snackbar.LENGTH_LONG).show();
+                        } else {
+                            Snackbar.make(navigationView, "建立訂單失敗", Snackbar.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
+
+    private void buildPersonalOrder(PersonalOrderResult result) {
+        Clouds.getInstance().buildPersonalOrder(result.personalOrderDoc, result.imagePath, result.uid)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        backToNavItemByFlag(R.id.nav_order_ended);
+                        showLoading(false);
+                        if (task.isSuccessful()) {
+                            Snackbar.make(navigationView, "建立訂單成功", Snackbar.LENGTH_LONG).show();
+                        } else {
+                            Snackbar.make(navigationView, "建立訂單失敗", Snackbar.LENGTH_LONG).show();
+                        }
+                    }
+                });
     }
 
     @Override

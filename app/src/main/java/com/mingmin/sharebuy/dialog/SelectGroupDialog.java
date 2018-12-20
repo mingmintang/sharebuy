@@ -17,7 +17,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.mingmin.sharebuy.Group;
+import com.mingmin.sharebuy.item.Group;
 import com.mingmin.sharebuy.R;
 import com.mingmin.sharebuy.cloud.Clouds;
 

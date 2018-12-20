@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.fragment;
 
 import android.content.Context;
 import android.net.Uri;
@@ -11,8 +11,12 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.adapter.UserEndOrderRecyclerAdapter;
 import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.cloud.StoreOrdersCloud;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.item.User;
 
 public class UserEndOrdersFragment extends Fragment implements UserEndOrderRecyclerAdapter.UserEndOrderRecyclerAdapterListener {
     private User user;

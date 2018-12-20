@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.fragment;
 
 import android.content.Context;
 import android.net.Uri;
@@ -16,9 +16,12 @@ import android.view.ViewGroup;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.adapter.UserOrderRecyclerAdapter;
 import com.mingmin.sharebuy.cloud.Clouds;
-import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.item.User;
 
 public class UserOrdersFragment extends Fragment implements UserOrderRecyclerAdapter.UserOrderRecyclerAdapterListener,
         ConfirmDialog.ConfirmListener {

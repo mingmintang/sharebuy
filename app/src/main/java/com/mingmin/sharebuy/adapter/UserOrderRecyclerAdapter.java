@@ -1,8 +1,9 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.adapter;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,16 +18,23 @@ import com.bumptech.glide.request.RequestOptions;
 import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.firebase.ui.firestore.SnapshotParser;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
-import com.mingmin.sharebuy.cloud.UserEndOrderCloud;
-import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
+import com.mingmin.sharebuy.R;
+import com.mingmin.sharebuy.cloud.Clouds;
+import com.mingmin.sharebuy.cloud.UserOrderCloud;
+import com.mingmin.sharebuy.cloud.UserOrderDoc;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.item.User;
 
-public class UserEndOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, UserEndOrderRecyclerAdapter.OrderHolder> implements PopupMenu.OnMenuItemClickListener {
+public class UserOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, UserOrderRecyclerAdapter.OrderHolder> implements PopupMenu.OnMenuItemClickListener {
 
-    private UserEndOrderCloud cloud;
+    private final String TAG = getClass().getSimpleName();
+    private UserOrderCloud cloud;
 
-    public class OrderHolder extends RecyclerView.ViewHolder implements UserEndOrderCloud.UserEndOrderListener {
+    public class OrderHolder extends RecyclerView.ViewHolder implements UserOrderCloud.UserOrderListener {
         ImageView imageView;
         TextView tvName;
         TextView tvDesc;
@@ -54,7 +62,7 @@ public class UserEndOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order,
             ibMenu = itemView.findViewById(R.id.row_order_menu);
             popupMenu = new PopupMenu(context, ibMenu);
             popupMenu.getMenuInflater().inflate(R.menu.order_menu, popupMenu.getMenu());
-            popupMenu.setOnMenuItemClickListener(UserEndOrderRecyclerAdapter.this);
+            popupMenu.setOnMenuItemClickListener(UserOrderRecyclerAdapter.this);
             ibMenu.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -71,21 +79,58 @@ public class UserEndOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order,
         }
 
         @Override
-        public void onUserEndOrderChanged(final Order order, OrderHolder holder) {
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    listener.onUserEndOrderItemViewClicked(order);
+        public void onUserOrderChanged(final Order order, final OrderHolder holder, User user) {
+            if (user.getUid().equals(order.getManagerUid())) {
+                if (order.getState() == Order.STATE_TAKE) {
+                    holder.ibMenu.setVisibility(View.VISIBLE);
+                    holder.popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+                            switch (item.getItemId()) {
+                                case R.id.order_menu_end:
+                                    listener.onUserOrderMenuEndClicked(order);
+                                    return true;
+                                default:
+                                    return false;
+                            }
+                        }
+                    });
                 }
-            });
+                holder.tvStatus.setText(order.getManagerName() + "接單");
+            } else {
+                Clouds.getInstance().checkOrderBuyerExist(order.getGroupId(), order.getId(), user.getUid())
+                        .addOnSuccessListener(new OnSuccessListener<Boolean>() {
+                            @Override
+                            public void onSuccess(Boolean aBoolean) {
+                                String status;
+                                if (aBoolean) {
+                                    status = order.getManagerName() + "接單\n已下單購買";
+                                } else {
+                                    holder.itemView.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            listener.onUserOrderItemViewClicked(order, order.getMyName());
+                                        }
+                                    });
+                                    status = order.getManagerName() + orderStatus[order.getState()];
+                                }
+                                holder.tvStatus.setText(status);
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.d(TAG, "onFailure: " + e.getMessage());
+                            }
+                        });
+            }
+
             holder.tvName.setText(order.getName());
             holder.tvDesc.setText(order.getDesc());
             holder.tvPrice.setText(String.valueOf(order.getPrice()));
             holder.tvCount.setText(String.valueOf(order.getBuyCount()));
             holder.calculateAmount();
             holder.tvCoinUnit.setText(coinUnits[order.getCoinUnit()]);
-            String status = order.getManagerName() + orderStatus[order.getState()];
-            holder.tvStatus.setText(status);
 
             RequestOptions requestOptions = new RequestOptions()
                     .centerCrop()
@@ -102,30 +147,30 @@ public class UserEndOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order,
     private Context context;
     private String[] coinUnits;
     private String[] orderStatus;
-    private UserEndOrderRecyclerAdapterListener listener;
-    private String uid;
+    private UserOrderRecyclerAdapterListener listener;
+    private User user;
 
-    private UserEndOrderRecyclerAdapter(@NonNull FirestoreRecyclerOptions<Order> options) {
+    private UserOrderRecyclerAdapter(@NonNull FirestoreRecyclerOptions<Order> options) {
         super(options);
     }
 
-    public UserEndOrderRecyclerAdapter(Context context, UserEndOrderRecyclerAdapterListener listener, String uid, Query query) {
+    public UserOrderRecyclerAdapter(Context context, UserOrderRecyclerAdapterListener listener, User user, Query query) {
         this(new FirestoreRecyclerOptions.Builder<Order>()
                 .setQuery(query, new SnapshotParser<Order>() {
                     @NonNull
                     @Override
                     public Order parseSnapshot(@NonNull DocumentSnapshot snapshot) {
-                        UserEndOrderDoc userEndOrderDoc = snapshot.toObject(UserEndOrderDoc.class);
-                        return new Order(snapshot.getId(), userEndOrderDoc);
+                        UserOrderDoc userOrderDoc = snapshot.toObject(UserOrderDoc.class);
+                        return new Order(snapshot.getId(), userOrderDoc);
                     }
                 })
                 .build());
         this.context = context;
         this.listener = listener;
-        this.uid = uid;
+        this.user = user;
         coinUnits = context.getResources().getStringArray(R.array.coin_units);
         orderStatus = context.getResources().getStringArray(R.array.order_status);
-        cloud = new UserEndOrderCloud();
+        cloud = new UserOrderCloud();
     }
 
     @NonNull
@@ -145,14 +190,14 @@ public class UserEndOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order,
     public void onViewAttachedToWindow(@NonNull OrderHolder holder) {
         super.onViewAttachedToWindow(holder);
         Order order = (Order) holder.itemView.getTag();
-        cloud.addUserEndOrderListener(uid, order, holder);
+        cloud.addUserOrderListener(user, order.getMyName(), order.getGroupId(), order.getId(), holder);
     }
 
     @Override
     public void onViewDetachedFromWindow(@NonNull OrderHolder holder) {
         super.onViewDetachedFromWindow(holder);
         Order order = (Order) holder.itemView.getTag();
-        cloud.removeUserEndOrderListener(order.getId());
+        cloud.removeUserOrderListener(order.getId());
     }
 
     public void removeAllListener() {
@@ -169,7 +214,8 @@ public class UserEndOrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order,
         }
     }
 
-    public interface UserEndOrderRecyclerAdapterListener {
-        void onUserEndOrderItemViewClicked(Order order);
+    public interface UserOrderRecyclerAdapterListener {
+        void onUserOrderItemViewClicked(Order order, String myName);
+        void onUserOrderMenuEndClicked(Order order);
     }
 }

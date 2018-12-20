@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.item;
 
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
 import com.mingmin.sharebuy.cloud.PersonalOrderDoc;

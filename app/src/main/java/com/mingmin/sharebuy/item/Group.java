@@ -1,12 +1,10 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.item;
 
 import com.mingmin.sharebuy.cloud.GroupDoc;
-import com.mingmin.sharebuy.cloud.MemberDoc;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 
 public class Group implements Serializable {
     private String id;

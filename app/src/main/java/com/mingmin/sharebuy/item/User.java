@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.item;
 
 import java.io.Serializable;
 

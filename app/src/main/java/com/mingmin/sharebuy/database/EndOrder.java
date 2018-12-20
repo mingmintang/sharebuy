@@ -5,10 +5,9 @@ import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.TypeConverters;
 import android.support.annotation.NonNull;
 
-import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.item.Order;
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
 import com.mingmin.sharebuy.cloud.PersonalOrderDoc;
-import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 
 import java.util.Date;
 

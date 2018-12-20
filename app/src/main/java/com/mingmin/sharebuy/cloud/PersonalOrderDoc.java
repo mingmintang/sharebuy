@@ -1,6 +1,8 @@
 package com.mingmin.sharebuy.cloud;
 
-public class PersonalOrderDoc {
+import java.io.Serializable;
+
+public class PersonalOrderDoc implements Serializable {
     private int buyCount;
     private String imageUrl;
     private String name;

@@ -6,8 +6,8 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.mingmin.sharebuy.Order;
-import com.mingmin.sharebuy.UserEndOrderRecyclerAdapter;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.adapter.UserEndOrderRecyclerAdapter;
 
 import java.util.HashMap;
 

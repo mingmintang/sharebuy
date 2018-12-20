@@ -11,7 +11,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -24,10 +23,10 @@ import com.google.firebase.firestore.Transaction;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.mingmin.sharebuy.Buyer;
-import com.mingmin.sharebuy.Group;
-import com.mingmin.sharebuy.Member;
-import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.item.Buyer;
+import com.mingmin.sharebuy.item.Group;
+import com.mingmin.sharebuy.item.Member;
+import com.mingmin.sharebuy.item.Order;
 import com.mingmin.sharebuy.notification.GroupNotification;
 import com.mingmin.sharebuy.notification.Notification;
 import com.mingmin.sharebuy.utils.InternetCheck;
@@ -612,7 +611,7 @@ public class Clouds {
                 long state = (long) snap.get("state");
                 long maxBuyCount = (long) snap.get("maxBuyCount");
                 long boughtCount = (long) snap.get("buyCount");
-                if (state == com.mingmin.sharebuy.Order.STATE_TAKE) {
+                if (state == Order.STATE_TAKE) {
                     long amount = boughtCount + buyCount;
                     if (maxBuyCount == 0) { // no limit max buy count
                         transaction.update(groupOrderDoc, "buyCount", amount);

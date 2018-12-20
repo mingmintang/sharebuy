@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.adapter;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -22,14 +22,18 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.R;
 import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
+import com.mingmin.sharebuy.item.Group;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.item.User;
 
 public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderRecyclerAdapter.OrderHolder> {
 
     private final String TAG = getClass().getSimpleName();
 
-    class OrderHolder extends RecyclerView.ViewHolder {
+    public class OrderHolder extends RecyclerView.ViewHolder {
         ImageView imageView;
         TextView tvName;
         TextView tvDesc;

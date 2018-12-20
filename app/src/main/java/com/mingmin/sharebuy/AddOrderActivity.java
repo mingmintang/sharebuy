@@ -1,7 +1,8 @@
 package com.mingmin.sharebuy;
 
+import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -11,17 +12,20 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.firestore.DocumentReference;
-import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.cloud.GroupOrderDoc;
 import com.mingmin.sharebuy.cloud.PersonalOrderDoc;
-import com.mingmin.sharebuy.cloud.UserEndOrderDoc;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.SelectGroupDialog;
 import com.mingmin.sharebuy.fragment.EditOrderFragment;
 import com.mingmin.sharebuy.fragment.SelectOrderImageFragment;
+import com.mingmin.sharebuy.item.Group;
+import com.mingmin.sharebuy.item.GroupOrderResult;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.item.PersonalOrderResult;
+import com.mingmin.sharebuy.item.User;
+import com.tbruyelle.rxpermissions2.RxPermissions;
+
+import io.reactivex.functions.Consumer;
 
 public class AddOrderActivity extends AppCompatActivity implements
         SelectOrderImageFragment.OnFragmentInteractionListener,
@@ -44,6 +48,31 @@ public class AddOrderActivity extends AppCompatActivity implements
 
         user = (User) getIntent().getSerializableExtra("user");
         initViews();
+
+        checkPermissions();
+    }
+
+    private void checkPermissions() {
+        final RxPermissions rxPermissions = new RxPermissions(this);
+        rxPermissions.request(Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean granted) throws Exception {
+                        if (!granted) {
+                            finishAfterTransition();
+                        }
+                    }
+                });
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Intent data = new Intent();
+        data.putExtra("type", MainActivity.TYPE_BACK_PRESSED);
+        setResult(RESULT_OK, data);
+        finishAfterTransition();
     }
 
     @Override
@@ -170,40 +199,22 @@ public class AddOrderActivity extends AppCompatActivity implements
 
     private void buildGroupOrder(int orderState, Group group) {
         GroupOrderDoc groupOrderDoc = editOrderFragment.getGroupOrder();
-        Clouds.getInstance().buildGroupOrder(orderState, imagePath, user.getUid(), groupOrderDoc, group)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        setResult(RESULT_OK);
-                        finish();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        setResult(RESULT_CANCELED);
-                        finish();
-                    }
-                });
+        Intent data = new Intent();
+        GroupOrderResult result = new GroupOrderResult(orderState, imagePath, user.getUid(), groupOrderDoc, group);
+        data.putExtra("type", MainActivity.TYPE_GROUP_ORDER);
+        data.putExtra("result", result);
+        setResult(RESULT_OK, data);
+        finishAfterTransition();
     }
 
     private void buildPersonalOrder() {
         PersonalOrderDoc personalOrder = editOrderFragment.getPersoanlOrder();
-        Clouds.getInstance().buildPersonalOrder(personalOrder, imagePath, user.getUid())
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        setResult(RESULT_OK);
-                        finish();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        setResult(RESULT_CANCELED);
-                        finish();
-                    }
-                });
+        Intent data = new Intent();
+        PersonalOrderResult result = new PersonalOrderResult(personalOrder, imagePath, user.getUid());
+        data.putExtra("type", MainActivity.TYPE_PERSONAL_ORDER);
+        data.putExtra("result", result);
+        setResult(RESULT_OK, data);
+        finishAfterTransition();
     }
 
     class AddOrderPagerAdapter extends FragmentPagerAdapter {

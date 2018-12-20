@@ -12,15 +12,13 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.mingmin.sharebuy.Order;
+import com.mingmin.sharebuy.item.Order;
 import com.mingmin.sharebuy.database.Buyer;
 import com.mingmin.sharebuy.database.Db;
 import com.mingmin.sharebuy.database.EndOrder;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 
 import javax.annotation.Nullable;
 

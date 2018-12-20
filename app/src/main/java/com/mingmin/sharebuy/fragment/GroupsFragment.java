@@ -1,4 +1,4 @@
-package com.mingmin.sharebuy;
+package com.mingmin.sharebuy.fragment;
 
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +10,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,11 +25,19 @@ import com.firebase.ui.firestore.FirestoreRecyclerAdapter;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.Query;
+import com.mingmin.sharebuy.GroupInfoActivity;
+import com.mingmin.sharebuy.GroupManageActivity;
+import com.mingmin.sharebuy.MainActivity;
+import com.mingmin.sharebuy.adapter.OrderRecyclerAdapter;
+import com.mingmin.sharebuy.R;
 import com.mingmin.sharebuy.cloud.Clouds;
 import com.mingmin.sharebuy.dialog.AddGroupDialog;
 import com.mingmin.sharebuy.dialog.BuyOrderDialog;
 import com.mingmin.sharebuy.dialog.ConfirmDialog;
 import com.mingmin.sharebuy.dialog.JoinGroupDialog;
+import com.mingmin.sharebuy.item.Group;
+import com.mingmin.sharebuy.item.Order;
+import com.mingmin.sharebuy.item.User;
 
 import java.util.ArrayList;
 
