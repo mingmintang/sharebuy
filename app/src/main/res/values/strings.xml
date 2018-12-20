@@ -27,6 +27,7 @@
     <string name="manage_group">管理群組</string>
     <string name="take_order">接單</string>
     <string name="take_order_bought">接單\n已下單購買</string>
+    <string name="order_ended_bought">已結單\n已下單購買</string>
     <string name="times">x</string>
     <string name="equal">=</string>
 </resources>

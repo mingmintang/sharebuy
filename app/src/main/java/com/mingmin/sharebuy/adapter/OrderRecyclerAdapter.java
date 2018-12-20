@@ -118,26 +118,25 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
     @Override
     protected void onBindViewHolder(@NonNull final OrderHolder holder, int position, @NonNull final Order order) {
         if (user.getUid().equals(order.getManagerUid())) {
-            if (order.getState() == Order.STATE_TAKE) {
-                holder.ibMenu.setVisibility(View.VISIBLE);
-                holder.popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        switch (item.getItemId()) {
-                            case R.id.order_menu_end:
-                                listener.onOrderMenuEndClicked(order);
-                                return true;
-                            default:
-                                return false;
-                        }
-                    }
-                });
-            }
             switch (order.getState()) {
                 case Order.STATE_TAKE:
+                    holder.ibMenu.setVisibility(View.VISIBLE);
+                    holder.popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                        @Override
+                        public boolean onMenuItemClick(MenuItem item) {
+                            switch (item.getItemId()) {
+                                case R.id.order_menu_end:
+                                    listener.onOrderMenuEndClicked(order);
+                                    return true;
+                                default:
+                                    return false;
+                            }
+                        }
+                    });
                     holder.tvStatus.setText(order.getManagerName() + context.getString(R.string.take_order));
                     break;
                 case Order.STATE_END:
+                    holder.ibMenu.setVisibility(View.GONE);
                     holder.tvStatus.setText(order.getManagerName() + context.getString(R.string.order_ended));
                     break;
             }
@@ -146,9 +145,16 @@ public class OrderRecyclerAdapter extends FirestoreRecyclerAdapter<Order, OrderR
                     .addOnSuccessListener(new OnSuccessListener<Boolean>() {
                         @Override
                         public void onSuccess(Boolean aBoolean) {
-                            String status;
+                            String status = "";
                             if (aBoolean) {
-                                status = order.getManagerName() + context.getString(R.string.take_order_bought);
+                                switch (order.getState()) {
+                                    case Order.STATE_TAKE:
+                                        status = order.getManagerName() + context.getString(R.string.take_order_bought);
+                                        break;
+                                    case Order.STATE_END:
+                                        status = order.getManagerName() + context.getString(R.string.order_ended_bought);
+                                        break;
+                                }
                             } else {
                                 holder.itemView.setOnClickListener(new View.OnClickListener() {
                                     @Override
