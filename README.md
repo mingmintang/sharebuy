@@ -3,6 +3,7 @@
 親朋好友加入群組互相代購幫買東西，用JAVA寫成，練習項目TakePhoto、Glide使用和Firebase的帳號登入、Firestore、Storage存照片、Cloud Function寫通知、FirebseUI等。
 #### [APK下載](https://github.com/mingmintang/sharebuy/raw/master/apk/sharebuy.apk "sharebuy.apk")
 
+
 ### 實作內容：
 1. Google帳號登入
 2. 新增/搜尋群組
@@ -10,9 +11,11 @@
 4. 新增/購買群組訂單
 5. 新增私人訂單
 
-### 使用說明
+
+### 使用說明：
 **使用者A**新增群組成功後取得群組的搜尋碼<br/>
 ![GITHUB](https://github.com/mingmintang/sharebuy/blob/master/screenshot/add_group.jpg "新增群組")
+
 **使用者B**利用群組的搜尋碼加入群組<br/>
 ![GITHUB](https://github.com/mingmintang/sharebuy/blob/master/screenshot/join_group.jpg "加入群組")
 
